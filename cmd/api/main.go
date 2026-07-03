@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"prisma-backend/internal/config"
-	"prisma-backend/internal/middleware"
-	"prisma-backend/routes"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/routes"
 )
 
 func main() {
