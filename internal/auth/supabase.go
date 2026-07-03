@@ -130,6 +130,10 @@ func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metad
 		return nil, "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	fmt.Printf("SignUp - AccessToken: '%s'\n", response.AccessToken)
+	fmt.Printf("SignUp - UserID: %s\n", response.User.ID)
+	fmt.Printf("SignUp - Email: %s\n", response.User.Email)
+
 	claims, err := s.ParseToken(response.AccessToken)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to parse token: %w", err)
