@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"prisma-backend/internal/auth"
-	"prisma-backend/internal/utils"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
 
 type AuthMiddleware struct {
