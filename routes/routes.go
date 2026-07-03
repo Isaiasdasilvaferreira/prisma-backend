@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"prisma-backend/internal/auth"
-	"prisma-backend/internal/config"
-	"prisma-backend/internal/middleware"
-	"prisma-backend/internal/utils"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
 
 type AuthRoutes struct {
