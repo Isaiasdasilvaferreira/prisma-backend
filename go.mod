@@ -1,4 +1,4 @@
-module https://github.com/Isaiasdasilvaferreira/prisma-backend
+module github.com/Isaiasdasilvaferreira/prisma-backend
 
 go 1.22
 
