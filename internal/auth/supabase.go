@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -144,7 +145,41 @@ func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metad
 
 func (s *SupabaseAuth) ParseToken(tokenString string) (*SupabaseClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &SupabaseClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.jwtSecret), nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
+			return []byte(s.jwtSecret), nil
+		}
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); ok {
+			jwksJSON := os.Getenv("SUPABASE_JWT_PUBLIC_KEY")
+			if jwksJSON == "" {
+				return nil, fmt.Errorf("SUPABASE_JWT_PUBLIC_KEY environment variable not set")
+			}
+
+			var jwks struct {
+				Keys []struct {
+					Kid string `json:"kid"`
+					Kty string `json:"kty"`
+					Crv string `json:"crv"`
+					X   string `json:"x"`
+					Y   string `json:"y"`
+				} `json:"keys"`
+			}
+
+			if err := json.Unmarshal([]byte(jwksJSON), &jwks); err != nil {
+				return nil, fmt.Errorf("failed to parse JWKS: %w", err)
+			}
+
+			if len(jwks.Keys) == 0 {
+				return nil, fmt.Errorf("no keys found in JWKS")
+			}
+
+			publicKey, err := jwt.ParseECPublicKeyFromJWK(jwks.Keys[0])
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse EC public key from JWK: %w", err)
+			}
+
+			return publicKey, nil
+		}
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token: %w", err)
