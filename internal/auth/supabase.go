@@ -27,7 +27,6 @@ func NewSupabaseAuth(url, anonKey, jwtSecret string) *SupabaseAuth {
 	}
 }
 
-// SignIn realiza login com email e senha
 func (s *SupabaseAuth) SignIn(ctx context.Context, email, password string) (*SupabaseClaims, string, error) {
 	reqBody := map[string]string{
 		"email":    email,
@@ -75,7 +74,6 @@ func (s *SupabaseAuth) SignIn(ctx context.Context, email, password string) (*Sup
 		return nil, "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	// Parsear o token JWT para obter os claims
 	claims, err := s.ParseToken(response.AccessToken)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to parse token: %w", err)
@@ -84,7 +82,6 @@ func (s *SupabaseAuth) SignIn(ctx context.Context, email, password string) (*Sup
 	return claims, response.AccessToken, nil
 }
 
-// SignUp realiza cadastro de usuário
 func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metadata map[string]interface{}) (*SupabaseClaims, string, error) {
 	reqBody := map[string]interface{}{
 		"email":    email,
@@ -141,7 +138,6 @@ func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metad
 	return claims, response.AccessToken, nil
 }
 
-// ParseToken valida e parseia o JWT token
 func (s *SupabaseAuth) ParseToken(tokenString string) (*SupabaseClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &SupabaseClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.jwtSecret), nil
