@@ -2,9 +2,12 @@ package auth
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -172,9 +175,19 @@ func (s *SupabaseAuth) ParseToken(tokenString string) (*SupabaseClaims, error) {
 				return nil, fmt.Errorf("no keys found in JWKS")
 			}
 
-			publicKey, err := jwt.ParseECPublicKeyFromJWK(jwks.Keys[0])
+			xBytes, err := jwt.DecodeString(jwks.Keys[0].X)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse EC public key from JWK: %w", err)
+				return nil, fmt.Errorf("failed to decode X coordinate: %w", err)
+			}
+			yBytes, err := jwt.DecodeString(jwks.Keys[0].Y)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode Y coordinate: %w", err)
+			}
+
+			publicKey := &ecdsa.PublicKey{
+				Curve: elliptic.P256(),
+				X:     new(big.Int).SetBytes(xBytes),
+				Y:     new(big.Int).SetBytes(yBytes),
 			}
 
 			return publicKey, nil
