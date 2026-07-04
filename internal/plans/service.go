@@ -35,22 +35,47 @@ func (s *PlanService) CanScrape(ctx context.Context, userID string) (bool, error
 }
 
 func (s *PlanService) createStarterPlan(ctx context.Context, userID string) error {
-	_, err := s.db.Supabase.DB.From("user_plans").
+	var result []map[string]interface{}
+	err := s.db.Supabase.DB.From("user_plans").
 		Insert(map[string]interface{}{
 			"id":        uuid.New().String(),
 			"user_id":   userID,
 			"plan_type": 1,
 		}).
-		Execute()
+		Execute(&result)
 	return err
 }
 
 func (s *PlanService) UpgradeToProfessional(ctx context.Context, userID string) error {
-	_, err := s.db.Supabase.DB.From("user_plans").
-		Upsert(map[string]interface{}{
-			"user_id":   userID,
+	var result []map[string]interface{}
+	
+	var existing []map[string]interface{}
+	err := s.db.Supabase.DB.From("user_plans").
+		Select("id").
+		Eq("user_id", userID).
+		Execute(&existing)
+	
+	if err != nil {
+		return err
+	}
+	
+	if len(existing) == 0 {
+		err = s.db.Supabase.DB.From("user_plans").
+			Insert(map[string]interface{}{
+				"id":        uuid.New().String(),
+				"user_id":   userID,
+				"plan_type": 2,
+			}).
+			Execute(&result)
+		return err
+	}
+	
+	err = s.db.Supabase.DB.From("user_plans").
+		Update(map[string]interface{}{
 			"plan_type": 2,
-		}, "user_id", "plan_type").
-		Execute()
+		}).
+		Eq("user_id", userID).
+		Execute(&result)
+	
 	return err
 }
