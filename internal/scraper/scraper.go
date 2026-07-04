@@ -10,6 +10,7 @@ import (
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/opportunity"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -310,26 +311,55 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	for _, opp := range opps {
 		var result []map[string]interface{}
+		
+		var existing []map[string]interface{}
 		err := s.db.Supabase.DB.From("opportunities").
-			Upsert(map[string]interface{}{
-				"external_id":     opp.ExternalID,
-				"source":          opp.Source,
-				"company":         opp.Company,
-				"title":           opp.Title,
-				"description":     opp.Description,
-				"contract_type":   opp.ContractType,
-				"modality":        opp.Modality,
-				"level":           opp.Level,
-				"service_type":    opp.ServiceType,
-				"location":        opp.Location,
-				"salary_range":    opp.SalaryRange,
-				"application_url": opp.ApplicationURL,
-				"posted_at":       opp.PostedAt,
-				"is_active":       opp.IsActive,
-			}, "external_id", "source", "company", "title", "description",
-				"contract_type", "modality", "level", "service_type", "location",
-				"salary_range", "application_url", "posted_at", "is_active").
-			Execute(&result)
+			Select("id").
+			Eq("external_id", opp.ExternalID).
+			Execute(&existing)
+		
+		if err != nil {
+			return err
+		}
+		
+		if len(existing) == 0 {
+			err = s.db.Supabase.DB.From("opportunities").
+				Insert(map[string]interface{}{
+					"id":              uuid.New().String(),
+					"external_id":     opp.ExternalID,
+					"source":          opp.Source,
+					"company":         opp.Company,
+					"title":           opp.Title,
+					"description":     opp.Description,
+					"contract_type":   opp.ContractType,
+					"modality":        opp.Modality,
+					"level":           opp.Level,
+					"service_type":    opp.ServiceType,
+					"location":        opp.Location,
+					"salary_range":    opp.SalaryRange,
+					"application_url": opp.ApplicationURL,
+					"posted_at":       opp.PostedAt,
+					"is_active":       opp.IsActive,
+				}).
+				Execute(&result)
+		} else {
+			err = s.db.Supabase.DB.From("opportunities").
+				Update(map[string]interface{}{
+					"title":           opp.Title,
+					"description":     opp.Description,
+					"contract_type":   opp.ContractType,
+					"modality":        opp.Modality,
+					"level":           opp.Level,
+					"service_type":    opp.ServiceType,
+					"location":        opp.Location,
+					"salary_range":    opp.SalaryRange,
+					"application_url": opp.ApplicationURL,
+					"posted_at":       opp.PostedAt,
+					"is_active":       opp.IsActive,
+				}).
+				Eq("external_id", opp.ExternalID).
+				Execute(&result)
+		}
 
 		if err != nil {
 			return err
