@@ -42,6 +42,8 @@ func (m *AuthMiddleware) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		ctx := context.WithValue(r.Context(), "user_claims", claims)
+		ctx = context.WithValue(ctx, "user_id", claims.UserID)
+		ctx = context.WithValue(ctx, "user_role", claims.Role)
 		r = r.WithContext(ctx)
 
 		next(w, r)
@@ -58,6 +60,8 @@ func (m *AuthMiddleware) OptionalAuth(next http.HandlerFunc) http.HandlerFunc {
 				claims, err := m.authService.VerifyToken(r.Context(), tokenString)
 				if err == nil {
 					ctx := context.WithValue(r.Context(), "user_claims", claims)
+					ctx = context.WithValue(ctx, "user_id", claims.UserID)
+					ctx = context.WithValue(ctx, "user_role", claims.Role)
 					r = r.WithContext(ctx)
 				}
 			}
@@ -83,5 +87,41 @@ func (m *AuthMiddleware) RequireRole(role string) func(http.HandlerFunc) http.Ha
 
 			next(w, r)
 		}
+	}
+}
+
+func (m *AuthMiddleware) AuthenticateAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Missing authorization header")
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid authorization header format")
+			return
+		}
+
+		tokenString := parts[1]
+
+		claims, err := m.authService.VerifyToken(r.Context(), tokenString)
+		if err != nil {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid or expired token")
+			return
+		}
+
+		if claims.Role != "admin" {
+			utils.ErrorResponse(w, http.StatusForbidden, "Admin access required")
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user_claims", claims)
+		ctx = context.WithValue(ctx, "user_id", claims.UserID)
+		ctx = context.WithValue(ctx, "user_role", claims.Role)
+		r = r.WithContext(ctx)
+
+		next(w, r)
 	}
 }
