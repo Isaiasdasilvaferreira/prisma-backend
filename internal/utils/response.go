@@ -11,20 +11,30 @@ type Response struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-func SuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
+func SuccessResponse(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(Response{
 		Success: true,
 		Data:    data,
 	})
 }
 
-func ErrorResponse(w http.ResponseWriter, statusCode int, message string) {
+func ErrorResponse(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(Response{
 		Success: false,
 		Error:   message,
 	})
+}
+
+func RespondWithJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+func RespondWithError(w http.ResponseWriter, status int, message string) {
+	ErrorResponse(w, status, message)
 }
