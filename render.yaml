@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: prisma-backend
+    env: go
+    buildCommand: |
+      go mod download
+      go mod tidy
+      go build -o prisma-backend ./cmd/api
+    startCommand: ./prisma-backend
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
