@@ -17,12 +17,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/auth/login", authRoutes.LoginHandler)
-	mux.HandleFunc("/api/auth/signup", authRoutes.SignupHandler)
-
-	authMiddleware := middleware.NewAuthMiddleware(authRoutes.AuthService())
-	
-	mux.HandleFunc("/api/auth/me", authMiddleware.Authenticate(authRoutes.MeHandler))
+	authRoutes.RegisterRoutes(mux)
 
 	handler := middleware.CORSMiddleware(mux)
 
