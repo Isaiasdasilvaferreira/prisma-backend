@@ -11,6 +11,7 @@ import (
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/plans"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/scraper"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
 
@@ -18,11 +19,11 @@ type AuthRoutes struct {
 	authService       auth.AuthService
 	authMiddleware    *middleware.AuthMiddleware
 	planController    *plans.PlanController
+	planUserController *user.PlanController
 	scraperController *scraper.ScraperController
 }
 
-func NewAuthRoutes(cfg *config.Config) *AuthRoutes {
-	authService := auth.NewAuthService(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret)
+func NewAuthRoutes(cfg *config.Config, authService auth.AuthService) *AuthRoutes {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	db, err := database.NewDatabase(cfg)
@@ -30,14 +31,17 @@ func NewAuthRoutes(cfg *config.Config) *AuthRoutes {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	planRepo := user.NewPlanRepository(db)
 	planController := plans.NewPlanController(db)
+	planUserController := user.NewPlanController(planRepo)
 	scraperController := scraper.NewScraperController(db)
 
 	return &AuthRoutes{
-		authService:       authService,
-		authMiddleware:    authMiddleware,
-		planController:    planController,
-		scraperController: scraperController,
+		authService:        authService,
+		authMiddleware:     authMiddleware,
+		planController:     planController,
+		planUserController: planUserController,
+		scraperController:  scraperController,
 	}
 }
 
@@ -145,6 +149,8 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/plans/can-scrape", r.authMiddleware.Authenticate(r.planController.CanScrape))
 	mux.HandleFunc("/api/plans/upgrade", r.authMiddleware.Authenticate(r.planController.UpgradeToProfessional))
+
+	mux.HandleFunc("/api/user/plan", r.authMiddleware.Authenticate(r.planUserController.GetUserPlan))
 
 	mux.HandleFunc("/api/scraping/trigger", r.authMiddleware.AuthenticateAdmin(r.scraperController.TriggerScraping))
 }
