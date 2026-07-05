@@ -23,18 +23,13 @@ type AuthRoutes struct {
 	scraperController  *scraper.ScraperController
 }
 
-func NewAuthRoutes(cfg *config.Config, authService auth.AuthService) *AuthRoutes {
+func NewAuthRoutes(cfg *config.Config, authService auth.AuthService, supabaseClient *supabase.Client) *AuthRoutes {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	db, err := database.NewDatabase(cfg)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	planRepo := user.NewPlanRepository(db.DB)
-	planController := plans.NewPlanController(db)
+	planRepo := user.NewPlanRepository(supabaseClient)
+	planController := plans.NewPlanController(supabaseClient)
 	planUserController := user.NewPlanController(planRepo)
-	scraperController := scraper.NewScraperController(db)
+	scraperController := scraper.NewScraperController(supabaseClient)
 
 	return &AuthRoutes{
 		authService:        authService,
