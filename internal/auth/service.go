@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/seu-projeto/prisma-backend/internal/user"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 )
 
 type AuthService interface {
