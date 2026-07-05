@@ -3,17 +3,17 @@ package plans
 import (
 	"net/http"
 
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
+	"github.com/nedpals/supabase-go"
 )
 
 type PlanController struct {
 	service *PlanService
 }
 
-func NewPlanController(db *database.Database) *PlanController {
+func NewPlanController(supabase *supabase.Client) *PlanController {
 	return &PlanController{
-		service: NewPlanService(db),
+		service: NewPlanService(supabase),
 	}
 }
 
