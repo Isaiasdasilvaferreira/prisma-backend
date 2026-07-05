@@ -17,8 +17,8 @@ type AuthService interface {
 }
 
 type authService struct {
-	supabase      *SupabaseAuth
-	planRepo      user.PlanRepository
+	supabase *SupabaseAuth
+	planRepo user.PlanRepository
 }
 
 func NewAuthService(supabaseURL, anonKey, jwtSecret string, db *sql.DB) AuthService {
