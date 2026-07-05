@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/opportunity"
 	"github.com/google/uuid"
+	"github.com/nedpals/supabase-go"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,34 +20,34 @@ type Scraper interface {
 }
 
 type ScraperService struct {
-	db       *database.Database
+	supabase *supabase.Client
 	scrapers map[opportunity.Source]Scraper
 }
 
-func NewScraperService(db *database.Database) *ScraperService {
+func NewScraperService(supabase *supabase.Client) *ScraperService {
 	s := &ScraperService{
-		db:       db,
+		supabase: supabase,
 		scrapers: make(map[opportunity.Source]Scraper),
 	}
 
-	s.scrapers[opportunity.SourceGreenhouse] = NewGreenhouseScraper(db)
-	s.scrapers[opportunity.SourceLever] = NewLeverScraper(db)
-	s.scrapers[opportunity.SourceAshby] = NewAshbyScraper(db)
+	s.scrapers[opportunity.SourceGreenhouse] = NewGreenhouseScraper(supabase)
+	s.scrapers[opportunity.SourceLever] = NewLeverScraper(supabase)
+	s.scrapers[opportunity.SourceAshby] = NewAshbyScraper(supabase)
 
 	return s
 }
 
 type BaseScraper struct {
-	client  *http.Client
-	baseURL string
-	db      *database.Database
+	client   *http.Client
+	baseURL  string
+	supabase *supabase.Client
 }
 
-func NewBaseScraper(db *database.Database, baseURL string) *BaseScraper {
+func NewBaseScraper(supabase *supabase.Client, baseURL string) *BaseScraper {
 	return &BaseScraper{
-		client:  &http.Client{Timeout: 30 * time.Second},
-		baseURL: baseURL,
-		db:      db,
+		client:   &http.Client{Timeout: 30 * time.Second},
+		baseURL:  baseURL,
+		supabase: supabase,
 	}
 }
 
@@ -126,9 +126,9 @@ type GreenhouseScraper struct {
 	*BaseScraper
 }
 
-func NewGreenhouseScraper(db *database.Database) *GreenhouseScraper {
+func NewGreenhouseScraper(supabase *supabase.Client) *GreenhouseScraper {
 	return &GreenhouseScraper{
-		BaseScraper: NewBaseScraper(db, "https://boards-api.greenhouse.io/v1/boards"),
+		BaseScraper: NewBaseScraper(supabase, "https://boards-api.greenhouse.io/v1/boards"),
 	}
 }
 
@@ -198,9 +198,9 @@ type LeverScraper struct {
 	*BaseScraper
 }
 
-func NewLeverScraper(db *database.Database) *LeverScraper {
+func NewLeverScraper(supabase *supabase.Client) *LeverScraper {
 	return &LeverScraper{
-		BaseScraper: NewBaseScraper(db, "https://api.lever.co/v0"),
+		BaseScraper: NewBaseScraper(supabase, "https://api.lever.co/v0"),
 	}
 }
 
@@ -271,9 +271,9 @@ type AshbyScraper struct {
 	*BaseScraper
 }
 
-func NewAshbyScraper(db *database.Database) *AshbyScraper {
+func NewAshbyScraper(supabase *supabase.Client) *AshbyScraper {
 	return &AshbyScraper{
-		BaseScraper: NewBaseScraper(db, "https://api.ashbyhq.com/posting-api"),
+		BaseScraper: NewBaseScraper(supabase, "https://api.ashbyhq.com/posting-api"),
 	}
 }
 
@@ -310,20 +310,19 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	for _, opp := range opps {
-		var result []map[string]interface{}
-		
 		var existing []map[string]interface{}
-		err := s.db.Supabase.DB.From("opportunities").
+		err := s.supabase.DB.From("opportunities").
 			Select("id").
 			Eq("external_id", opp.ExternalID).
 			Execute(&existing)
-		
+
 		if err != nil {
 			return err
 		}
-		
+
 		if len(existing) == 0 {
-			err = s.db.Supabase.DB.From("opportunities").
+			var result []map[string]interface{}
+			err = s.supabase.DB.From("opportunities").
 				Insert(map[string]interface{}{
 					"id":              uuid.New().String(),
 					"external_id":     opp.ExternalID,
@@ -342,8 +341,12 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 					"is_active":       opp.IsActive,
 				}).
 				Execute(&result)
+			if err != nil {
+				return err
+			}
 		} else {
-			err = s.db.Supabase.DB.From("opportunities").
+			var result []map[string]interface{}
+			err = s.supabase.DB.From("opportunities").
 				Update(map[string]interface{}{
 					"title":           opp.Title,
 					"description":     opp.Description,
@@ -359,10 +362,9 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 				}).
 				Eq("external_id", opp.ExternalID).
 				Execute(&result)
-		}
-
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
