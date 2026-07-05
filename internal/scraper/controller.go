@@ -3,17 +3,17 @@ package scraper
 import (
 	"net/http"
 
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
+	"github.com/nedpals/supabase-go"
 )
 
 type ScraperController struct {
 	service *ScraperService
 }
 
-func NewScraperController(db *database.Database) *ScraperController {
+func NewScraperController(supabase *supabase.Client) *ScraperController {
 	return &ScraperController{
-		service: NewScraperService(db),
+		service: NewScraperService(supabase),
 	}
 }
 
