@@ -2,17 +2,16 @@ package routes
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/plans"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/scraper"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
+	"github.com/nedpals/supabase-go"
 )
 
 type AuthRoutes struct {
