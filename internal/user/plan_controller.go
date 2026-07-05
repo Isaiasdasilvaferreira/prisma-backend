@@ -18,19 +18,13 @@ func NewPlanController(planRepo PlanRepository) *PlanController {
 }
 
 func (c *PlanController) GetUserPlan(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id")
-	if userID == nil {
+	userID, ok := r.Context().Value("user_id").(string)
+	if !ok {
 		utils.ErrorResponse(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	userIDStr, ok := userID.(string)
-	if !ok {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	parsedUserID, err := uuid.Parse(userIDStr)
+	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid user ID format")
 		return
