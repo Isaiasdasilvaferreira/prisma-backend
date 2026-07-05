@@ -5,15 +5,26 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/routes"
 )
 
 func main() {
 	cfg := config.LoadConfig()
 
-	authRoutes := routes.NewAuthRoutes(cfg)
+	db, err := database.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	authService := auth.NewAuthService(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret, db)
+
+	authRoutes := routes.NewAuthRoutes(authService)
 
 	mux := http.NewServeMux()
 
