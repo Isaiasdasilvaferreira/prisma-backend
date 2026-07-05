@@ -16,11 +16,11 @@ import (
 )
 
 type AuthRoutes struct {
-	authService       auth.AuthService
-	authMiddleware    *middleware.AuthMiddleware
-	planController    *plans.PlanController
+	authService        auth.AuthService
+	authMiddleware     *middleware.AuthMiddleware
+	planController     *plans.PlanController
 	planUserController *user.PlanController
-	scraperController *scraper.ScraperController
+	scraperController  *scraper.ScraperController
 }
 
 func NewAuthRoutes(cfg *config.Config, authService auth.AuthService) *AuthRoutes {
@@ -31,7 +31,7 @@ func NewAuthRoutes(cfg *config.Config, authService auth.AuthService) *AuthRoutes
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	planRepo := user.NewPlanRepository(db)
+	planRepo := user.NewPlanRepository(db.DB)
 	planController := plans.NewPlanController(db)
 	planUserController := user.NewPlanController(planRepo)
 	scraperController := scraper.NewScraperController(db)
