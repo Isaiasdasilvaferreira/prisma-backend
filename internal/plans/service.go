@@ -2,80 +2,41 @@ package plans
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/database"
-	"github.com/google/uuid"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
+	"github.com/nedpals/supabase-go"
 )
 
 type PlanService struct {
-	db *database.Database
+	supabase  *supabase.Client
+	planRepo  user.PlanRepository
 }
 
-func NewPlanService(db *database.Database) *PlanService {
-	return &PlanService{db: db}
+func NewPlanService(supabase *supabase.Client) *PlanService {
+	return &PlanService{
+		supabase: supabase,
+		planRepo: user.NewPlanRepository(supabase),
+	}
 }
 
 func (s *PlanService) CanScrape(ctx context.Context, userID string) (bool, error) {
-	var results []map[string]interface{}
-	err := s.db.Supabase.DB.From("user_plans").
-		Select("plan_type").
-		Eq("user_id", userID).
-		Execute(&results)
-
+	plan, err := s.planRepo.GetUserPlan(ctx, userID)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get user plan: %w", err)
 	}
 
-	if len(results) == 0 {
-		return false, s.createStarterPlan(ctx, userID)
+	if plan == nil {
+		return false, nil
 	}
 
-	planType := int(results[0]["plan_type"].(float64))
-	return planType == 2, nil
-}
-
-func (s *PlanService) createStarterPlan(ctx context.Context, userID string) error {
-	var result []map[string]interface{}
-	err := s.db.Supabase.DB.From("user_plans").
-		Insert(map[string]interface{}{
-			"id":        uuid.New().String(),
-			"user_id":   userID,
-			"plan_type": 1,
-		}).
-		Execute(&result)
-	return err
+	return plan.PlanType == user.PlanProfessional, nil
 }
 
 func (s *PlanService) UpgradeToProfessional(ctx context.Context, userID string) error {
-	var result []map[string]interface{}
-	
-	var existing []map[string]interface{}
-	err := s.db.Supabase.DB.From("user_plans").
-		Select("id").
-		Eq("user_id", userID).
-		Execute(&existing)
-	
+	_, err := s.planRepo.UpdateUserPlan(ctx, userID, user.PlanProfessional)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to upgrade plan: %w", err)
 	}
-	
-	if len(existing) == 0 {
-		err = s.db.Supabase.DB.From("user_plans").
-			Insert(map[string]interface{}{
-				"id":        uuid.New().String(),
-				"user_id":   userID,
-				"plan_type": 2,
-			}).
-			Execute(&result)
-		return err
-	}
-	
-	err = s.db.Supabase.DB.From("user_plans").
-		Update(map[string]interface{}{
-			"plan_type": 2,
-		}).
-		Eq("user_id", userID).
-		Execute(&result)
-	
-	return err
+	return nil
 }
