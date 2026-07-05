@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/nedpals/supabase-go"
 )
 
 type PlanService struct {
-	supabase  *supabase.Client
-	planRepo  user.PlanRepository
+	supabase *supabase.Client
+	planRepo user.PlanRepository
 }
 
 func NewPlanService(supabase *supabase.Client) *PlanService {
@@ -21,7 +22,12 @@ func NewPlanService(supabase *supabase.Client) *PlanService {
 }
 
 func (s *PlanService) CanScrape(ctx context.Context, userID string) (bool, error) {
-	plan, err := s.planRepo.GetUserPlan(ctx, userID)
+	parsedUserID, err := uuid.Parse(userID)
+	if err != nil {
+		return false, fmt.Errorf("invalid user ID format: %w", err)
+	}
+
+	plan, err := s.planRepo.GetUserPlan(ctx, parsedUserID)
 	if err != nil {
 		return false, fmt.Errorf("failed to get user plan: %w", err)
 	}
@@ -34,7 +40,12 @@ func (s *PlanService) CanScrape(ctx context.Context, userID string) (bool, error
 }
 
 func (s *PlanService) UpgradeToProfessional(ctx context.Context, userID string) error {
-	_, err := s.planRepo.UpdateUserPlan(ctx, userID, user.PlanProfessional)
+	parsedUserID, err := uuid.Parse(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID format: %w", err)
+	}
+
+	_, err = s.planRepo.UpdateUserPlan(ctx, parsedUserID, user.PlanProfessional)
 	if err != nil {
 		return fmt.Errorf("failed to upgrade plan: %w", err)
 	}
