@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
+	"github.com/nedpals/supabase-go"
 )
 
 type AuthService interface {
@@ -21,10 +21,10 @@ type authService struct {
 	planRepo user.PlanRepository
 }
 
-func NewAuthService(supabaseURL, anonKey, jwtSecret string, db *sql.DB) AuthService {
+func NewAuthService(supabaseURL, anonKey, jwtSecret string, supabaseClient *supabase.Client) AuthService {
 	return &authService{
 		supabase: NewSupabaseAuth(supabaseURL, anonKey, jwtSecret),
-		planRepo: user.NewPlanRepository(db),
+		planRepo: user.NewPlanRepository(supabaseClient),
 	}
 }
 
