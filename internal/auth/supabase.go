@@ -43,7 +43,7 @@ func (s *SupabaseAuth) SignIn(ctx context.Context, email, password string) (*Sup
 		return nil, "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", 
+	req, err := http.NewRequestWithContext(ctx, "POST",
 		fmt.Sprintf("%s/auth/v1/token?grant_type=password", s.url),
 		strings.NewReader(string(reqJSON)))
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metad
 		return nil, "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", 
+	req, err := http.NewRequestWithContext(ctx, "POST",
 		fmt.Sprintf("%s/auth/v1/signup", s.url),
 		strings.NewReader(string(reqJSON)))
 	if err != nil {
@@ -134,10 +134,6 @@ func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metad
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, "", fmt.Errorf("failed to decode response: %w", err)
 	}
-
-	fmt.Printf("SignUp - AccessToken: '%s'\n", response.AccessToken)
-	fmt.Printf("SignUp - UserID: %s\n", response.User.ID)
-	fmt.Printf("SignUp - Email: %s\n", response.User.Email)
 
 	claims, err := s.ParseToken(response.AccessToken)
 	if err != nil {
@@ -211,7 +207,7 @@ func (s *SupabaseAuth) VerifyToken(tokenString string) (*SupabaseClaims, error) 
 }
 
 func (s *SupabaseAuth) GetUser(ctx context.Context, tokenString string) (*SupabaseClaims, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", 
+	req, err := http.NewRequestWithContext(ctx, "GET",
 		fmt.Sprintf("%s/auth/v1/user", s.url), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
