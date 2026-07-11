@@ -303,4 +303,61 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 		}
 
 		if err := s.saveOpportunities(ctx, opps); err != nil {
-			log.Error().Err(err).Str("
+			log.Error().Err(err).Str("source", string(source)).Msg("Failed to save")
+			continue
+		}
+
+		log.Info().Str("source", string(source)).Int("count", len(opps)).Msg("Scraping completed")
+	}
+
+	return nil
+}
+
+func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
+	for _, opp := range opps {
+		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
+		if err != nil {
+			return err
+		}
+
+		if existing == nil {
+			if err := s.oppRepo.Create(ctx, &opp); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, source opportunity.Source, limit int) ([]opportunity.Opportunity, error) {
+	canScrape, remaining, err := s.userSvc.CanScrapeOpportunities(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error checking scrape permissions: %w", err)
+	}
+
+	if !canScrape {
+		return nil, fmt.Errorf("daily limit reached. Remaining: %d", remaining)
+	}
+
+	scraper, exists := s.scrapers[source]
+	if !exists {
+		return nil, fmt.Errorf("scraper not found for source: %s", source)
+	}
+
+	allOpps, err := scraper.Scrape(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error scraping %s: %w", source, err)
+	}
+
+	if limit > 0 && len(allOpps) > limit {
+		allOpps = allOpps[:limit]
+	}
+
+	for _, opp := range allOpps {
+		if err := s.userSvc.IncrementUsedCount(ctx, userID); err != nil {
+			log.Error().Err(err).Msg("Failed to increment usage count")
+		}
+	}
+
+	return allOpps, nil
+}
