@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/opportunity"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
 	"github.com/rs/zerolog/log"
@@ -20,13 +21,17 @@ type Scraper interface {
 }
 
 type ScraperService struct {
-	supabase *supabase.Client
-	scrapers map[opportunity.Source]Scraper
+	supabase   *supabase.Client
+	userSvc    user.Service
+	oppRepo    opportunity.Repository
+	scrapers   map[opportunity.Source]Scraper
 }
 
-func NewScraperService(supabase *supabase.Client) *ScraperService {
+func NewScraperService(supabase *supabase.Client, userSvc user.Service, oppRepo opportunity.Repository) *ScraperService {
 	s := &ScraperService{
 		supabase: supabase,
+		userSvc:  userSvc,
+		oppRepo:  oppRepo,
 		scrapers: make(map[opportunity.Source]Scraper),
 	}
 
@@ -298,74 +303,4 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 		}
 
 		if err := s.saveOpportunities(ctx, opps); err != nil {
-			log.Error().Err(err).Str("source", string(source)).Msg("Failed to save")
-			continue
-		}
-
-		log.Info().Str("source", string(source)).Int("count", len(opps)).Msg("Scraping completed")
-	}
-
-	return nil
-}
-
-func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
-	for _, opp := range opps {
-		var existing []map[string]interface{}
-		err := s.supabase.DB.From("opportunities").
-			Select("id").
-			Eq("external_id", opp.ExternalID).
-			Execute(&existing)
-
-		if err != nil {
-			return err
-		}
-
-		if len(existing) == 0 {
-			var result []map[string]interface{}
-			err = s.supabase.DB.From("opportunities").
-				Insert(map[string]interface{}{
-					"id":              uuid.New().String(),
-					"external_id":     opp.ExternalID,
-					"source":          opp.Source,
-					"company":         opp.Company,
-					"title":           opp.Title,
-					"description":     opp.Description,
-					"contract_type":   opp.ContractType,
-					"modality":        opp.Modality,
-					"level":           opp.Level,
-					"service_type":    opp.ServiceType,
-					"location":        opp.Location,
-					"salary_range":    opp.SalaryRange,
-					"application_url": opp.ApplicationURL,
-					"posted_at":       opp.PostedAt,
-					"is_active":       opp.IsActive,
-				}).
-				Execute(&result)
-			if err != nil {
-				return err
-			}
-		} else {
-			var result []map[string]interface{}
-			err = s.supabase.DB.From("opportunities").
-				Update(map[string]interface{}{
-					"title":           opp.Title,
-					"description":     opp.Description,
-					"contract_type":   opp.ContractType,
-					"modality":        opp.Modality,
-					"level":           opp.Level,
-					"service_type":    opp.ServiceType,
-					"location":        opp.Location,
-					"salary_range":    opp.SalaryRange,
-					"application_url": opp.ApplicationURL,
-					"posted_at":       opp.PostedAt,
-					"is_active":       opp.IsActive,
-				}).
-				Eq("external_id", opp.ExternalID).
-				Execute(&result)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+			log.Error().Err(err).Str("
