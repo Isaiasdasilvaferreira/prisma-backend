@@ -18,3 +18,5 @@ require (
 	github.com/mattn/go-isatty v0.0.19
 	golang.org/x/sys v0.12.0
 )
+
+require github.com/gorilla/mux v1.8.1 // indirect
