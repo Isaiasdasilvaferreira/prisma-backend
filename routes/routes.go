@@ -7,6 +7,7 @@ import (
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/middleware"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/opportunity"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/plans"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/scraper"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
@@ -15,32 +16,28 @@ import (
 )
 
 type AuthRoutes struct {
-	authService        auth.AuthService
+	authService        *auth.SupabaseAuth
 	authMiddleware     *middleware.AuthMiddleware
 	planController     *plans.PlanController
-	planUserController *user.PlanController
 	scraperController  *scraper.ScraperController
 }
 
-func NewAuthRoutes(cfg *config.Config, authService auth.AuthService, supabaseClient *supabase.Client) *AuthRoutes {
+func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseClient *supabase.Client) *AuthRoutes {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	planRepo := user.NewPlanRepository(supabaseClient)
-	planController := plans.NewPlanController(supabaseClient)
-	planUserController := user.NewPlanController(planRepo)
-	scraperController := scraper.NewScraperController(supabaseClient)
+	userSvc := user.NewService(planRepo)
+	oppRepo := opportunity.NewRepository(supabaseClient)
+	
+	planController := plans.NewPlanController(supabaseClient, planRepo, userSvc)
+	scraperController := scraper.NewScraperController(supabaseClient, userSvc, oppRepo)
 
 	return &AuthRoutes{
 		authService:        authService,
 		authMiddleware:     authMiddleware,
 		planController:     planController,
-		planUserController: planUserController,
 		scraperController:  scraperController,
 	}
-}
-
-func (r *AuthRoutes) AuthService() auth.AuthService {
-	return r.authService
 }
 
 type LoginRequest struct {
@@ -138,13 +135,15 @@ func (r *AuthRoutes) MeHandler(w http.ResponseWriter, req *http.Request) {
 func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/auth/login", r.LoginHandler)
 	mux.HandleFunc("/api/auth/signup", r.SignupHandler)
-
 	mux.HandleFunc("/api/auth/me", r.authMiddleware.Authenticate(r.MeHandler))
 
 	mux.HandleFunc("/api/plans/can-scrape", r.authMiddleware.Authenticate(r.planController.CanScrape))
 	mux.HandleFunc("/api/plans/upgrade", r.authMiddleware.Authenticate(r.planController.UpgradeToProfessional))
+	mux.HandleFunc("/api/user/plan", r.authMiddleware.Authenticate(r.planController.GetUserPlan))
 
-	mux.HandleFunc("/api/user/plan", r.authMiddleware.Authenticate(r.planUserController.GetUserPlan))
-
+	mux.HandleFunc("/api/scrape/ashby", r.authMiddleware.Authenticate(r.scraperController.ScrapeAshby))
+	mux.HandleFunc("/api/scrape/greenhouse", r.authMiddleware.Authenticate(r.scraperController.ScrapeGreenhouse))
+	mux.HandleFunc("/api/scrape/lever", r.authMiddleware.Authenticate(r.scraperController.ScrapeLever))
+	mux.HandleFunc("/api/scrape/all", r.authMiddleware.Authenticate(r.scraperController.ScrapeAll))
 	mux.HandleFunc("/api/scraping/trigger", r.authMiddleware.AuthenticateAdmin(r.scraperController.TriggerScraping))
 }
