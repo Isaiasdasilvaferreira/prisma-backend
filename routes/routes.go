@@ -156,15 +156,15 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/scraping/trigger", r.authMiddleware.AuthenticateAdmin(r.scraperController.TriggerScraping))
 
 	mux.HandleFunc("/api/opportunities", r.authMiddleware.Authenticate(r.opportunityController.GetUserOpportunities))
+	mux.HandleFunc("/api/opportunities/stats", r.authMiddleware.Authenticate(r.opportunityController.GetOpportunitiesStats))
 	mux.HandleFunc("/api/opportunities/", r.authMiddleware.Authenticate(func(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		if strings.Contains(path, "/source/") {
 			r.opportunityController.GetOpportunitiesBySource(w, req)
-		} else if strings.HasPrefix(path, "/api/opportunities/") && path != "/api/opportunities" {
+		} else if path != "/api/opportunities/" && path != "/api/opportunities" {
 			r.opportunityController.GetUserOpportunityByID(w, req)
 		} else {
 			r.opportunityController.GetUserOpportunities(w, req)
 		}
 	}))
-	mux.HandleFunc("/api/opportunities/stats", r.authMiddleware.Authenticate(r.opportunityController.GetOpportunitiesStats))
 }
