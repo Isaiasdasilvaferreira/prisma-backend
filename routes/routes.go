@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/config"
@@ -12,7 +13,6 @@ import (
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/scraper"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
-	"github.com/gorilla/mux"
 	"github.com/nedpals/supabase-go"
 )
 
@@ -141,26 +141,30 @@ func (r *AuthRoutes) MeHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
-	router := mux.NewRouter()
-	
-	router.HandleFunc("/api/auth/login", r.LoginHandler).Methods("POST")
-	router.HandleFunc("/api/auth/signup", r.SignupHandler).Methods("POST")
-	router.HandleFunc("/api/auth/me", r.authMiddleware.Authenticate(r.MeHandler)).Methods("GET")
+	mux.HandleFunc("/api/auth/login", r.LoginHandler)
+	mux.HandleFunc("/api/auth/signup", r.SignupHandler)
+	mux.HandleFunc("/api/auth/me", r.authMiddleware.Authenticate(r.MeHandler))
 
-	router.HandleFunc("/api/plans/can-scrape", r.authMiddleware.Authenticate(r.planController.CanScrape)).Methods("GET")
-	router.HandleFunc("/api/plans/upgrade", r.authMiddleware.Authenticate(r.planController.UpgradeToProfessional)).Methods("POST")
-	router.HandleFunc("/api/user/plan", r.authMiddleware.Authenticate(r.planController.GetUserPlan)).Methods("GET")
+	mux.HandleFunc("/api/plans/can-scrape", r.authMiddleware.Authenticate(r.planController.CanScrape))
+	mux.HandleFunc("/api/plans/upgrade", r.authMiddleware.Authenticate(r.planController.UpgradeToProfessional))
+	mux.HandleFunc("/api/user/plan", r.authMiddleware.Authenticate(r.planController.GetUserPlan))
 
-	router.HandleFunc("/api/scrape/ashby", r.authMiddleware.Authenticate(r.scraperController.ScrapeAshby)).Methods("GET")
-	router.HandleFunc("/api/scrape/greenhouse", r.authMiddleware.Authenticate(r.scraperController.ScrapeGreenhouse)).Methods("GET")
-	router.HandleFunc("/api/scrape/lever", r.authMiddleware.Authenticate(r.scraperController.ScrapeLever)).Methods("GET")
-	router.HandleFunc("/api/scrape/all", r.authMiddleware.Authenticate(r.scraperController.ScrapeAll)).Methods("GET")
-	router.HandleFunc("/api/scraping/trigger", r.authMiddleware.AuthenticateAdmin(r.scraperController.TriggerScraping)).Methods("POST")
+	mux.HandleFunc("/api/scrape/ashby", r.authMiddleware.Authenticate(r.scraperController.ScrapeAshby))
+	mux.HandleFunc("/api/scrape/greenhouse", r.authMiddleware.Authenticate(r.scraperController.ScrapeGreenhouse))
+	mux.HandleFunc("/api/scrape/lever", r.authMiddleware.Authenticate(r.scraperController.ScrapeLever))
+	mux.HandleFunc("/api/scrape/all", r.authMiddleware.Authenticate(r.scraperController.ScrapeAll))
+	mux.HandleFunc("/api/scraping/trigger", r.authMiddleware.AuthenticateAdmin(r.scraperController.TriggerScraping))
 
-	router.HandleFunc("/api/opportunities", r.authMiddleware.Authenticate(r.opportunityController.GetUserOpportunities)).Methods("GET")
-	router.HandleFunc("/api/opportunities/{id}", r.authMiddleware.Authenticate(r.opportunityController.GetUserOpportunityByID)).Methods("GET")
-	router.HandleFunc("/api/opportunities/source/{source}", r.authMiddleware.Authenticate(r.opportunityController.GetOpportunitiesBySource)).Methods("GET")
-	router.HandleFunc("/api/opportunities/stats", r.authMiddleware.Authenticate(r.opportunityController.GetOpportunitiesStats)).Methods("GET")
-
-	mux.Handle("/", router)
+	mux.HandleFunc("/api/opportunities", r.authMiddleware.Authenticate(r.opportunityController.GetUserOpportunities))
+	mux.HandleFunc("/api/opportunities/", r.authMiddleware.Authenticate(func(w http.ResponseWriter, req *http.Request) {
+		path := req.URL.Path
+		if strings.Contains(path, "/source/") {
+			r.opportunityController.GetOpportunitiesBySource(w, req)
+		} else if strings.HasPrefix(path, "/api/opportunities/") && path != "/api/opportunities" {
+			r.opportunityController.GetUserOpportunityByID(w, req)
+		} else {
+			r.opportunityController.GetUserOpportunities(w, req)
+		}
+	}))
+	mux.HandleFunc("/api/opportunities/stats", r.authMiddleware.Authenticate(r.opportunityController.GetOpportunitiesStats))
 }
