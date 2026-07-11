@@ -10,10 +10,11 @@ import (
 )
 
 type PlanRepository interface {
-	CreateUserPlan(ctx context.Context, userID uuid.UUID) (*UserPlan, error)
 	GetUserPlan(ctx context.Context, userID uuid.UUID) (*UserPlan, error)
-	UpdateUserPlan(ctx context.Context, userID uuid.UUID, planType PlanType) (*UserPlan, error)
-	GetUserPlanByID(ctx context.Context, planID uuid.UUID) (*UserPlan, error)
+	UpdateUserPlan(ctx context.Context, userID uuid.UUID, planType PlanType) error
+	GetDailyUsage(ctx context.Context, userID uuid.UUID) (int, error)
+	IncrementDailyUsage(ctx context.Context, userID uuid.UUID, count int) error
+	ResetDailyUsage(ctx context.Context, userID uuid.UUID) error
 }
 
 type planRepository struct {
@@ -24,30 +25,6 @@ func NewPlanRepository(supabase *supabase.Client) PlanRepository {
 	return &planRepository{
 		supabase: supabase,
 	}
-}
-
-func (r *planRepository) CreateUserPlan(ctx context.Context, userID uuid.UUID) (*UserPlan, error) {
-	plan := &UserPlan{
-		ID:        uuid.New(),
-		UserID:    userID,
-		PlanType:  PlanFree,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	var result []UserPlan
-	err := r.supabase.DB.From("user_plans").
-		Insert(plan).
-		Execute(&result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create user plan: %w", err)
-	}
-
-	if len(result) == 0 {
-		return nil, fmt.Errorf("no data returned from insert")
-	}
-
-	return &result[0], nil
 }
 
 func (r *planRepository) GetUserPlan(ctx context.Context, userID uuid.UUID) (*UserPlan, error) {
@@ -67,41 +44,90 @@ func (r *planRepository) GetUserPlan(ctx context.Context, userID uuid.UUID) (*Us
 	return &result[0], nil
 }
 
-func (r *planRepository) UpdateUserPlan(ctx context.Context, userID uuid.UUID, planType PlanType) (*UserPlan, error) {
+func (r *planRepository) UpdateUserPlan(ctx context.Context, userID uuid.UUID, planType PlanType) error {
 	updates := map[string]interface{}{
-		"plan_type":  string(planType),
-		"updated_at": time.Now(),
+		"plan_type": string(planType),
 	}
 
-	var result []UserPlan
+	var result []map[string]interface{}
 	err := r.supabase.DB.From("user_plans").
 		Update(updates).
 		Eq("user_id", userID.String()).
 		Execute(&result)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update user plan: %w", err)
+		return fmt.Errorf("failed to update user plan: %w", err)
 	}
 
 	if len(result) == 0 {
-		return nil, fmt.Errorf("user plan not found for user_id: %s", userID)
+		return fmt.Errorf("user plan not found for user_id: %s", userID)
 	}
 
-	return &result[0], nil
+	return nil
 }
 
-func (r *planRepository) GetUserPlanByID(ctx context.Context, planID uuid.UUID) (*UserPlan, error) {
-	var result []UserPlan
-	err := r.supabase.DB.From("user_plans").
-		Select("*").
-		Eq("id", planID.String()).
+func (r *planRepository) GetDailyUsage(ctx context.Context, userID uuid.UUID) (int, error) {
+	today := time.Now().Format("2006-01-02")
+
+	var result []DailyUsage
+	err := r.supabase.DB.From("daily_usage").
+		Select("usage_count").
+		Eq("user_id", userID.String()).
+		Eq("usage_date", today).
 		Execute(&result)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user plan by id: %w", err)
+		return 0, nil
 	}
 
 	if len(result) == 0 {
-		return nil, nil
+		return 0, nil
 	}
 
-	return &result[0], nil
+	return result[0].UsageCount, nil
+}
+
+func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UUID, count int) error {
+	today := time.Now().Format("2006-01-02")
+
+	currentUsage, err := r.GetDailyUsage(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	newUsage := currentUsage + count
+
+	usageData := map[string]interface{}{
+		"user_id":     userID.String(),
+		"usage_date":  today,
+		"usage_count": newUsage,
+	}
+
+	var result []map[string]interface{}
+	err = r.supabase.DB.From("daily_usage").
+		Upsert(usageData, "user_id, usage_date", "usage_count").
+		Execute(&result)
+	if err != nil {
+		return fmt.Errorf("failed to update daily usage: %w", err)
+	}
+
+	return nil
+}
+
+func (r *planRepository) ResetDailyUsage(ctx context.Context, userID uuid.UUID) error {
+	today := time.Now().Format("2006-01-02")
+
+	updateData := map[string]interface{}{
+		"usage_count": 0,
+	}
+
+	var result []map[string]interface{}
+	err := r.supabase.DB.From("daily_usage").
+		Update(updateData).
+		Eq("user_id", userID.String()).
+		Eq("usage_date", today).
+		Execute(&result)
+	if err != nil {
+		return fmt.Errorf("failed to reset daily usage: %w", err)
+	}
+
+	return nil
 }
