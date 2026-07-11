@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -10,10 +9,10 @@ import (
 )
 
 type AuthMiddleware struct {
-	authService auth.AuthService
+	authService *auth.SupabaseAuth
 }
 
-func NewAuthMiddleware(authService auth.AuthService) *AuthMiddleware {
+func NewAuthMiddleware(authService *auth.SupabaseAuth) *AuthMiddleware {
 	return &AuthMiddleware{
 		authService: authService,
 	}
@@ -35,58 +34,19 @@ func (m *AuthMiddleware) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims, err := m.authService.VerifyToken(r.Context(), tokenString)
+		claims, err := m.authService.VerifyToken(tokenString)
 		if err != nil {
 			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid or expired token")
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user_claims", claims)
-		ctx = context.WithValue(ctx, "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "user_role", claims.Role)
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, auth.UserClaimsKey, claims)
+		ctx = context.WithValue(ctx, auth.UserIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, auth.UserRoleKey, claims.Role)
 		r = r.WithContext(ctx)
 
 		next(w, r)
-	}
-}
-
-func (m *AuthMiddleware) OptionalAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			parts := strings.Split(authHeader, " ")
-			if len(parts) == 2 && parts[0] == "Bearer" {
-				tokenString := parts[1]
-				claims, err := m.authService.VerifyToken(r.Context(), tokenString)
-				if err == nil {
-					ctx := context.WithValue(r.Context(), "user_claims", claims)
-					ctx = context.WithValue(ctx, "user_id", claims.UserID)
-					ctx = context.WithValue(ctx, "user_role", claims.Role)
-					r = r.WithContext(ctx)
-				}
-			}
-		}
-
-		next(w, r)
-	}
-}
-
-func (m *AuthMiddleware) RequireRole(role string) func(http.HandlerFunc) http.HandlerFunc {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			claims, ok := r.Context().Value("user_claims").(*auth.SupabaseClaims)
-			if !ok {
-				utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
-				return
-			}
-
-			if claims.Role != role {
-				utils.ErrorResponse(w, http.StatusForbidden, "Insufficient permissions")
-				return
-			}
-
-			next(w, r)
-		}
 	}
 }
 
@@ -106,7 +66,7 @@ func (m *AuthMiddleware) AuthenticateAdmin(next http.HandlerFunc) http.HandlerFu
 
 		tokenString := parts[1]
 
-		claims, err := m.authService.VerifyToken(r.Context(), tokenString)
+		claims, err := m.authService.VerifyToken(tokenString)
 		if err != nil {
 			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid or expired token")
 			return
@@ -117,9 +77,10 @@ func (m *AuthMiddleware) AuthenticateAdmin(next http.HandlerFunc) http.HandlerFu
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user_claims", claims)
-		ctx = context.WithValue(ctx, "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "user_role", claims.Role)
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, auth.UserClaimsKey, claims)
+		ctx = context.WithValue(ctx, auth.UserIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, auth.UserRoleKey, claims.Role)
 		r = r.WithContext(ctx)
 
 		next(w, r)
