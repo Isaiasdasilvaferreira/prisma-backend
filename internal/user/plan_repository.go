@@ -68,7 +68,9 @@ func (r *planRepository) UpdateUserPlan(ctx context.Context, userID uuid.UUID, p
 func (r *planRepository) GetDailyUsage(ctx context.Context, userID uuid.UUID) (int, error) {
 	today := time.Now().Format("2006-01-02")
 
-	var result []DailyUsage
+	var result []struct {
+		UsageCount int `json:"usage_count"`
+	}
 	err := r.supabase.DB.From("daily_usage").
 		Select("usage_count").
 		Eq("user_id", userID.String()).
