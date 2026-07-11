@@ -94,7 +94,6 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("user_id", userID).
-		Order("created_at", &supabase.OrderOpts{Descending: true}).
 		Execute(&result)
 	if err != nil {
 		return nil, fmt.Errorf("error getting opportunities by user: %w", err)
@@ -106,18 +105,11 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userID).
-		Eq("is_active", true)
+		Eq("user_id", userID)
 
 	if source != "" {
 		query = query.Eq("source", source)
 	}
-
-	if limit > 0 {
-		query = query.Limit(uint64(limit))
-	}
-
-	query = query.Order("created_at", &supabase.OrderOpts{Descending: true})
 
 	var result []Opportunity
 	err := query.Execute(&result)
@@ -125,42 +117,42 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 		return nil, fmt.Errorf("error getting opportunities with filters: %w", err)
 	}
 
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
+	}
+
 	return result, nil
 }
 
 func (r *repository) GetAllActive(ctx context.Context, limit int) ([]Opportunity, error) {
-	query := r.supabase.DB.From("opportunities").
-		Select("*").
-		Eq("is_active", true).
-		Order("created_at", &supabase.OrderOpts{Descending: true})
-
-	if limit > 0 {
-		query = query.Limit(uint64(limit))
-	}
-
 	var result []Opportunity
-	err := query.Execute(&result)
+	err := r.supabase.DB.From("opportunities").
+		Select("*").
+		Eq("is_active", "true").
+		Execute(&result)
 	if err != nil {
 		return nil, fmt.Errorf("error getting active opportunities: %w", err)
+	}
+
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
 	}
 
 	return result, nil
 }
 
 func (r *repository) GetBySource(ctx context.Context, source string, limit int) ([]Opportunity, error) {
-	query := r.supabase.DB.From("opportunities").
+	var result []Opportunity
+	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("source", source).
-		Eq("is_active", true)
-
-	if limit > 0 {
-		query = query.Limit(uint64(limit))
-	}
-
-	var result []Opportunity
-	err := query.Execute(&result)
+		Execute(&result)
 	if err != nil {
 		return nil, fmt.Errorf("error getting opportunities by source: %w", err)
+	}
+
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
 	}
 
 	return result, nil
@@ -171,7 +163,7 @@ func (r *repository) CountByUser(ctx context.Context, userID string) (int, error
 		Count int `json:"count"`
 	}
 	err := r.supabase.DB.From("opportunities").
-		Select("count", "exact").
+		Select("count").
 		Eq("user_id", userID).
 		Execute(&result)
 	if err != nil {
