@@ -51,24 +51,40 @@ func (c *ScraperController) ScrapeAshby(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	plan, err := c.service.userSvc.GetUserPlan(r.Context(), userID)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	limit := 10
-	if plan != nil && plan.PlanType == user.PlanProfessional {
-		limit = 30
-	}
-
 	opps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceAshby, limit)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.SuccessResponse(w, http.StatusOK, opps)
+	response := make([]opportunity.OpportunityResponse, len(opps))
+	for i, opp := range opps {
+		response[i] = opportunity.OpportunityResponse{
+			ID:             opp.ID,
+			ExternalID:     opp.ExternalID,
+			Source:         string(opp.Source),
+			Company:        opp.Company,
+			Title:          opp.Title,
+			Description:    opp.Description,
+			ContractType:   string(opp.ContractType),
+			Modality:       string(opp.Modality),
+			Level:          string(opp.Level),
+			ServiceType:    opp.ServiceType,
+			Location:       opp.Location,
+			SalaryRange:    opp.SalaryRange,
+			ApplicationURL: opp.ApplicationURL,
+			PostedAt:       opp.PostedAt,
+			IsActive:       opp.IsActive,
+			CreatedAt:      opp.CreatedAt,
+		}
+	}
+
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"source":        "ashby",
+		"count":         len(response),
+		"opportunities": response,
+	})
 }
 
 func (c *ScraperController) ScrapeGreenhouse(w http.ResponseWriter, r *http.Request) {
@@ -84,24 +100,40 @@ func (c *ScraperController) ScrapeGreenhouse(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	plan, err := c.service.userSvc.GetUserPlan(r.Context(), userID)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	limit := 10
-	if plan != nil && plan.PlanType == user.PlanProfessional {
-		limit = 30
-	}
-
 	opps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceGreenhouse, limit)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.SuccessResponse(w, http.StatusOK, opps)
+	response := make([]opportunity.OpportunityResponse, len(opps))
+	for i, opp := range opps {
+		response[i] = opportunity.OpportunityResponse{
+			ID:             opp.ID,
+			ExternalID:     opp.ExternalID,
+			Source:         string(opp.Source),
+			Company:        opp.Company,
+			Title:          opp.Title,
+			Description:    opp.Description,
+			ContractType:   string(opp.ContractType),
+			Modality:       string(opp.Modality),
+			Level:          string(opp.Level),
+			ServiceType:    opp.ServiceType,
+			Location:       opp.Location,
+			SalaryRange:    opp.SalaryRange,
+			ApplicationURL: opp.ApplicationURL,
+			PostedAt:       opp.PostedAt,
+			IsActive:       opp.IsActive,
+			CreatedAt:      opp.CreatedAt,
+		}
+	}
+
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"source":        "greenhouse",
+		"count":         len(response),
+		"opportunities": response,
+	})
 }
 
 func (c *ScraperController) ScrapeLever(w http.ResponseWriter, r *http.Request) {
@@ -117,24 +149,40 @@ func (c *ScraperController) ScrapeLever(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	plan, err := c.service.userSvc.GetUserPlan(r.Context(), userID)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	limit := 10
-	if plan != nil && plan.PlanType == user.PlanProfessional {
-		limit = 30
-	}
-
 	opps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceLever, limit)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.SuccessResponse(w, http.StatusOK, opps)
+	response := make([]opportunity.OpportunityResponse, len(opps))
+	for i, opp := range opps {
+		response[i] = opportunity.OpportunityResponse{
+			ID:             opp.ID,
+			ExternalID:     opp.ExternalID,
+			Source:         string(opp.Source),
+			Company:        opp.Company,
+			Title:          opp.Title,
+			Description:    opp.Description,
+			ContractType:   string(opp.ContractType),
+			Modality:       string(opp.Modality),
+			Level:          string(opp.Level),
+			ServiceType:    opp.ServiceType,
+			Location:       opp.Location,
+			SalaryRange:    opp.SalaryRange,
+			ApplicationURL: opp.ApplicationURL,
+			PostedAt:       opp.PostedAt,
+			IsActive:       opp.IsActive,
+			CreatedAt:      opp.CreatedAt,
+		}
+	}
+
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"source":        "lever",
+		"count":         len(response),
+		"opportunities": response,
+	})
 }
 
 func (c *ScraperController) ScrapeAll(w http.ResponseWriter, r *http.Request) {
@@ -150,46 +198,48 @@ func (c *ScraperController) ScrapeAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plan, err := c.service.userSvc.GetUserPlan(r.Context(), userID)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	limit := 10
-	if plan != nil && plan.PlanType == user.PlanProfessional {
-		limit = 30
-	}
-
-	type ScrapeResult struct {
-		Source string                        `json:"source"`
-		Count  int                           `json:"count"`
-		Data   []opportunity.Opportunity     `json:"data"`
-		Error  string                        `json:"error,omitempty"`
-	}
-
-	results := make([]ScrapeResult, 0)
+	allOpps := make([]opportunity.Opportunity, 0)
 
 	ashbyOpps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceAshby, limit)
-	if err != nil {
-		results = append(results, ScrapeResult{Source: "ashby", Error: err.Error()})
-	} else {
-		results = append(results, ScrapeResult{Source: "ashby", Count: len(ashbyOpps), Data: ashbyOpps})
+	if err == nil {
+		allOpps = append(allOpps, ashbyOpps...)
 	}
 
 	greenhouseOpps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceGreenhouse, limit)
-	if err != nil {
-		results = append(results, ScrapeResult{Source: "greenhouse", Error: err.Error()})
-	} else {
-		results = append(results, ScrapeResult{Source: "greenhouse", Count: len(greenhouseOpps), Data: greenhouseOpps})
+	if err == nil {
+		allOpps = append(allOpps, greenhouseOpps...)
 	}
 
 	leverOpps, err := c.service.ScrapeForUser(r.Context(), userID, opportunity.SourceLever, limit)
-	if err != nil {
-		results = append(results, ScrapeResult{Source: "lever", Error: err.Error()})
-	} else {
-		results = append(results, ScrapeResult{Source: "lever", Count: len(leverOpps), Data: leverOpps})
+	if err == nil {
+		allOpps = append(allOpps, leverOpps...)
 	}
 
-	utils.SuccessResponse(w, http.StatusOK, results)
+	response := make([]opportunity.OpportunityResponse, len(allOpps))
+	for i, opp := range allOpps {
+		response[i] = opportunity.OpportunityResponse{
+			ID:             opp.ID,
+			ExternalID:     opp.ExternalID,
+			Source:         string(opp.Source),
+			Company:        opp.Company,
+			Title:          opp.Title,
+			Description:    opp.Description,
+			ContractType:   string(opp.ContractType),
+			Modality:       string(opp.Modality),
+			Level:          string(opp.Level),
+			ServiceType:    opp.ServiceType,
+			Location:       opp.Location,
+			SalaryRange:    opp.SalaryRange,
+			ApplicationURL: opp.ApplicationURL,
+			PostedAt:       opp.PostedAt,
+			IsActive:       opp.IsActive,
+			CreatedAt:      opp.CreatedAt,
+		}
+	}
+
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"count":         len(response),
+		"opportunities": response,
+	})
 }
