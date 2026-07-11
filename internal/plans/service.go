@@ -4,50 +4,66 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
-	"github.com/nedpals/supabase-go"
+	"github.com/google/uuid"
 )
 
-type PlanService struct {
-	supabase *supabase.Client
+type PlanService interface {
+	GetUserPlan(ctx context.Context, userID uuid.UUID) (*user.UserPlan, error)
+	UpgradeToProfessional(ctx context.Context, userID uuid.UUID) error
+	CanScrape(ctx context.Context, userID uuid.UUID) (bool, int, error)
+	GetDailyLimit(ctx context.Context, userID uuid.UUID) (int, error)
+}
+
+type planService struct {
 	planRepo user.PlanRepository
 }
 
-func NewPlanService(supabase *supabase.Client) *PlanService {
-	return &PlanService{
-		supabase: supabase,
-		planRepo: user.NewPlanRepository(supabase),
+func NewPlanService(planRepo user.PlanRepository) PlanService {
+	return &planService{
+		planRepo: planRepo,
 	}
 }
 
-func (s *PlanService) CanScrape(ctx context.Context, userID string) (bool, error) {
-	parsedUserID, err := uuid.Parse(userID)
-	if err != nil {
-		return false, fmt.Errorf("invalid user ID format: %w", err)
-	}
+func (s *planService) GetUserPlan(ctx context.Context, userID uuid.UUID) (*user.UserPlan, error) {
+	return s.planRepo.GetUserPlan(ctx, userID)
+}
 
-	plan, err := s.planRepo.GetUserPlan(ctx, parsedUserID)
+func (s *planService) UpgradeToProfessional(ctx context.Context, userID uuid.UUID) error {
+	return s.planRepo.UpdateUserPlan(ctx, userID, user.PlanProfessional)
+}
+
+func (s *planService) CanScrape(ctx context.Context, userID uuid.UUID) (bool, int, error) {
+	plan, err := s.planRepo.GetUserPlan(ctx, userID)
 	if err != nil {
-		return false, fmt.Errorf("failed to get user plan: %w", err)
+		return false, 0, fmt.Errorf("error getting user plan: %w", err)
 	}
 
 	if plan == nil {
-		return false, nil
+		return true, 10, nil
 	}
 
-	return plan.PlanType == user.PlanProfessional, nil
+	dailyLimit := plan.PlanType.GetDailyLimit()
+	usedToday, err := s.planRepo.GetDailyUsage(ctx, userID)
+	if err != nil {
+		return false, 0, fmt.Errorf("error getting daily usage: %w", err)
+	}
+
+	remaining := dailyLimit - usedToday
+	canScrape := remaining > 0
+
+	return canScrape, remaining, nil
 }
 
-func (s *PlanService) UpgradeToProfessional(ctx context.Context, userID string) error {
-	parsedUserID, err := uuid.Parse(userID)
+func (s *planService) GetDailyLimit(ctx context.Context, userID uuid.UUID) (int, error) {
+	plan, err := s.planRepo.GetUserPlan(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("invalid user ID format: %w", err)
+		return 0, fmt.Errorf("error getting user plan: %w", err)
 	}
 
-	_, err = s.planRepo.UpdateUserPlan(ctx, parsedUserID, user.PlanProfessional)
-	if err != nil {
-		return fmt.Errorf("failed to upgrade plan: %w", err)
+	if plan == nil {
+		return 10, nil
 	}
-	return nil
+
+	return plan.PlanType.GetDailyLimit(), nil
 }
