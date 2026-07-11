@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	authService := auth.NewAuthService(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret, db.Supabase)
+	authService := auth.NewSupabaseAuth(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret)
 
 	authRoutes := routes.NewAuthRoutes(cfg, authService, db.Supabase)
 
