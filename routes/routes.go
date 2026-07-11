@@ -16,13 +16,13 @@ import (
 )
 
 type AuthRoutes struct {
-	authService        auth.AuthService
+	authService        *auth.SupabaseAuth
 	authMiddleware     *middleware.AuthMiddleware
 	planController     *plans.PlanController
 	scraperController  *scraper.ScraperController
 }
 
-func NewAuthRoutes(cfg *config.Config, authService auth.AuthService, supabaseClient *supabase.Client) *AuthRoutes {
+func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseClient *supabase.Client) *AuthRoutes {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	planRepo := user.NewPlanRepository(supabaseClient)
