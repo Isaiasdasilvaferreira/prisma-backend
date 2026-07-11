@@ -29,7 +29,8 @@ func NewAuthRoutes(cfg *config.Config, authService auth.AuthService, supabaseCli
 	userSvc := user.NewService(planRepo)
 	oppRepo := opportunity.NewRepository(supabaseClient)
 	
-	planController := plans.NewPlanController(supabaseClient, planRepo, userSvc)
+	planService := plans.NewPlanService(planRepo)
+	planController := plans.NewPlanController(planService)
 	scraperController := scraper.NewScraperController(supabaseClient, userSvc, oppRepo)
 
 	return &AuthRoutes{
