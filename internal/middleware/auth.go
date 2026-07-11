@@ -10,10 +10,10 @@ import (
 )
 
 type AuthMiddleware struct {
-	authService auth.AuthService
+	authService *auth.SupabaseAuth
 }
 
-func NewAuthMiddleware(authService auth.AuthService) *AuthMiddleware {
+func NewAuthMiddleware(authService *auth.SupabaseAuth) *AuthMiddleware {
 	return &AuthMiddleware{
 		authService: authService,
 	}
