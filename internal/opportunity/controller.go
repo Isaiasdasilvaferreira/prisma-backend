@@ -3,10 +3,10 @@ package opportunity
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
-	"github.com/gorilla/mux"
 )
 
 type Controller struct {
@@ -56,8 +56,8 @@ func (c *Controller) GetUserOpportunityByID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	vars := mux.Vars(r)
-	oppID := vars["id"]
+	pathParts := strings.Split(r.URL.Path, "/")
+	oppID := pathParts[len(pathParts)-1]
 
 	opp, err := c.service.GetUserOpportunityByID(r.Context(), userID, oppID)
 	if err != nil {
@@ -69,8 +69,8 @@ func (c *Controller) GetUserOpportunityByID(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *Controller) GetOpportunitiesBySource(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	source := vars["source"]
+	pathParts := strings.Split(r.URL.Path, "/")
+	source := pathParts[len(pathParts)-1]
 
 	limitStr := r.URL.Query().Get("limit")
 	limit := 0
