@@ -103,7 +103,7 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 
 	var result []map[string]interface{}
 	err = r.supabase.DB.From("daily_usage").
-		Upsert(usageData, "user_id, usage_date", "usage_count").
+		Upsert(usageData).
 		Execute(&result)
 	if err != nil {
 		return fmt.Errorf("failed to update daily usage: %w", err)
