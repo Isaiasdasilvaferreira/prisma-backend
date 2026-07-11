@@ -4,23 +4,17 @@ import (
 	"net/http"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
-	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 	"github.com/google/uuid"
-	"github.com/nedpals/supabase-go"
 )
 
 type PlanController struct {
-	supabase   *supabase.Client
-	planRepo   user.PlanRepository
-	userSvc    user.Service
+	planService PlanService
 }
 
-func NewPlanController(supabase *supabase.Client, planRepo user.PlanRepository, userSvc user.Service) *PlanController {
+func NewPlanController(planService PlanService) *PlanController {
 	return &PlanController{
-		supabase: supabase,
-		planRepo: planRepo,
-		userSvc:  userSvc,
+		planService: planService,
 	}
 }
 
@@ -37,7 +31,7 @@ func (c *PlanController) CanScrape(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canScrape, remaining, err := c.userSvc.CanScrapeOpportunities(r.Context(), userID)
+	canScrape, remaining, err := c.planService.CanScrape(r.Context(), userID)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -62,7 +56,7 @@ func (c *PlanController) UpgradeToProfessional(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = c.planRepo.UpdateUserPlan(r.Context(), userID, user.PlanProfessional)
+	err = c.planService.UpgradeToProfessional(r.Context(), userID)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -86,7 +80,7 @@ func (c *PlanController) GetUserPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plan, err := c.userSvc.GetUserPlan(r.Context(), userID)
+	plan, err := c.planService.GetUserPlan(r.Context(), userID)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
