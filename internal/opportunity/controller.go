@@ -49,7 +49,7 @@ func (c *Controller) GetUserOpportunities(w http.ResponseWriter, r *http.Request
 	utils.SuccessResponse(w, http.StatusOK, response)
 }
 
-func (c *Controller) GetUserOpportunityByID(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetUserOpportunityByExternalID(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.GetUserIDFromContext(r.Context())
 	if !ok {
 		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
@@ -57,9 +57,9 @@ func (c *Controller) GetUserOpportunityByID(w http.ResponseWriter, r *http.Reque
 	}
 
 	pathParts := strings.Split(r.URL.Path, "/")
-	oppID := pathParts[len(pathParts)-1]
+	externalID := pathParts[len(pathParts)-1]
 
-	opp, err := c.service.GetUserOpportunityByID(r.Context(), userID, oppID)
+	opp, err := c.service.GetUserOpportunityByExternalID(r.Context(), userID, externalID)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusNotFound, err.Error())
 		return
@@ -112,7 +112,6 @@ func (c *Controller) GetOpportunitiesStats(w http.ResponseWriter, r *http.Reques
 
 func toResponse(opp Opportunity) OpportunityResponse {
 	return OpportunityResponse{
-		ID:             opp.ID,
 		ExternalID:     opp.ExternalID,
 		Source:         string(opp.Source),
 		Company:        opp.Company,
@@ -123,6 +122,5 @@ func toResponse(opp Opportunity) OpportunityResponse {
 		Location:       opp.Location,
 		ApplicationURL: opp.ApplicationURL,
 		IsActive:       opp.IsActive,
-		CreatedAt:      opp.CreatedAt,
 	}
 }
