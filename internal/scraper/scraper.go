@@ -107,6 +107,25 @@ func (b *BaseScraper) DetermineServiceType(title string) string {
 	return "Design"
 }
 
+func (b *BaseScraper) IsDesignRelated(title string) bool {
+	titleLower := strings.ToLower(title)
+	designKeywords := []string{
+		"design", "designer", "ui", "ux", "product design", "graphic",
+		"visual", "branding", "motion", "editorial", "packaging",
+		"social media", "identidade visual", "landing page", "web design",
+		"interaction", "user interface", "user experience", "creative",
+		"art director", "design gráfico", "ux design", "ui design",
+		"illustration", "ilustração", "product designer",
+	}
+
+	for _, keyword := range designKeywords {
+		if strings.Contains(titleLower, keyword) {
+			return true
+		}
+	}
+	return false
+}
+
 type GreenhouseScraper struct {
 	*BaseScraper
 }
@@ -178,11 +197,16 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		}
 
 		for _, job := range result.Jobs {
+			if !g.IsDesignRelated(job.Title) {
+				continue
+			}
+
 			location := strings.ToLower(job.Location.Name)
 			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
 				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
 				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
-				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") {
+				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
+				!strings.Contains(location, "remote") && !strings.Contains(location, "remoto") {
 				continue
 			}
 
@@ -279,11 +303,16 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		}
 
 		for _, posting := range result.Data {
+			if !l.IsDesignRelated(posting.Text) {
+				continue
+			}
+
 			location := strings.ToLower(posting.Categories.Location)
 			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
 				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
 				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
-				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") {
+				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
+				!strings.Contains(location, "remote") && !strings.Contains(location, "remoto") {
 				continue
 			}
 
@@ -321,6 +350,7 @@ func (a *AshbyScraper) GetSource() opportunity.Source {
 }
 
 func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
+	utils.LogInfo("AshbyScraper - API retornando Unauthorized, ignorando scraping")
 	return []opportunity.Opportunity{}, nil
 }
 
@@ -339,6 +369,12 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 			continue
 		}
 
+		if err := s.saveOpportunities(ctx, opps); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to save %s", source), err)
+			log.Error().Err(err).Str("source", string(source)).Msg("Failed to save")
+			continue
+		}
+
 		utils.LogInfo(fmt.Sprintf("Fonte %s retornou %d oportunidades", source, len(opps)))
 		log.Info().Str("source", string(source)).Int("count", len(opps)).Msg("Scraping completed")
 	}
@@ -350,8 +386,13 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
 
+	companyCount := make(map[string]int)
+	var filteredOpps []opportunity.Opportunity
+
 	for _, opp := range opps {
-		utils.LogInfo(fmt.Sprintf("Processando oportunidade: %s", opp.ExternalID))
+		if companyCount[opp.Company] >= 2 {
+			continue
+		}
 
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
 		if err != nil {
@@ -360,15 +401,20 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 		}
 
 		if existing == nil {
-			utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
-			if err := s.oppRepo.Create(ctx, &opp); err != nil {
-				utils.LogError(fmt.Sprintf("Erro ao criar %s", opp.ExternalID), err)
-				return err
-			}
-			utils.LogInfo(fmt.Sprintf("Oportunidade criada com sucesso: %s", opp.ExternalID))
-		} else {
-			utils.LogInfo(fmt.Sprintf("Oportunidade já existe: %s", opp.ExternalID))
+			companyCount[opp.Company]++
+			filteredOpps = append(filteredOpps, opp)
 		}
+	}
+
+	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa)", len(filteredOpps)))
+
+	for _, opp := range filteredOpps {
+		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
+		if err := s.oppRepo.Create(ctx, &opp); err != nil {
+			utils.LogError(fmt.Sprintf("Erro ao criar %s", opp.ExternalID), err)
+			return err
+		}
+		utils.LogInfo(fmt.Sprintf("Oportunidade criada com sucesso: %s", opp.ExternalID))
 	}
 
 	utils.LogInfo("saveOpportunities finalizado")
