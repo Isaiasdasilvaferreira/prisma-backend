@@ -341,7 +341,7 @@ type AshbyScraper struct {
 
 func NewAshbyScraper(supabase *supabase.Client) *AshbyScraper {
 	return &AshbyScraper{
-		BaseScraper: NewBaseScraper(supabase, "https://api.ashbyhq.com/posting-api"),
+		BaseScraper: NewBaseScraper(supabase, "https://api.ashbyhq.com/posting-api/job-board"),
 	}
 }
 
@@ -350,8 +350,134 @@ func (a *AshbyScraper) GetSource() opportunity.Source {
 }
 
 func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
-	utils.LogInfo("AshbyScraper - API retornando Unauthorized, ignorando scraping")
-	return []opportunity.Opportunity{}, nil
+	companies := []struct {
+		Name string
+		Slug string
+	}{
+		{"nubank", "nubank"},
+		{"ifood", "ifood"},
+		{"lojadoze", "lojadoze"},
+		{"meliuz", "meliuz"},
+		{"quintoandar", "quintoandar"},
+		{"contaazul", "contaazul"},
+		{"omni", "omni"},
+		{"gympass", "gympass"},
+		{"loggi", "loggi"},
+		{"zarp", "zarp"},
+		{"c6bank", "c6bank"},
+		{"bancointer", "bancointer"},
+		{"picpay", "picpay"},
+		{"stone", "stone"},
+		{"pagseguro", "pagseguro"},
+		{"mercadolivre", "mercadolivre"},
+		{"olx", "olx"},
+		{"99", "99"},
+		{"rappi", "rappi"},
+		{"dafiti", "dafiti"},
+		{"madeiramadeira", "madeiramadeira"},
+	}
+
+	var allOpps []opportunity.Opportunity
+
+	for _, company := range companies {
+		url := fmt.Sprintf("%s/%s?includeCompensation=true", a.baseURL, company.Slug)
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			log.Error().Err(err).Str("company", company.Name).Msg("Failed to create request")
+			continue
+		}
+
+		req.Header.Set("Accept", "application/json; version=1")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := a.client.Do(req)
+		if err != nil {
+			log.Error().Err(err).Str("company", company.Name).Msg("Failed to fetch jobs")
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == 401 || resp.StatusCode == 403 {
+			log.Warn().Str("company", company.Name).Int("status", resp.StatusCode).Msg("Unauthorized or forbidden")
+			continue
+		}
+
+		var result struct {
+			Jobs []struct {
+				ID          string `json:"id"`
+				Title       string `json:"title"`
+				Description string `json:"description"`
+				Location    struct {
+					City        string `json:"city"`
+					Country     string `json:"country"`
+					Remote      bool   `json:"remote"`
+					Hybrid      bool   `json:"hybrid"`
+					DisplayName string `json:"displayName"`
+				} `json:"location"`
+				URL struct {
+					Application string `json:"application"`
+				} `json:"url"`
+				ListedAt     int64  `json:"listedAt"`
+				IsListed     bool   `json:"isListed"`
+				Department   string `json:"department"`
+				Employment   string `json:"employment"`
+				Compensation struct {
+					Currency string `json:"currency"`
+					Min      int    `json:"min"`
+					Max      int    `json:"max"`
+				} `json:"compensation"`
+			} `json:"jobs"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			log.Error().Err(err).Str("company", company.Name).Msg("Failed to decode")
+			continue
+		}
+
+		for _, job := range result.Jobs {
+			if !job.IsListed {
+				continue
+			}
+
+			if !a.IsDesignRelated(job.Title) {
+				continue
+			}
+
+			location := strings.ToLower(job.Location.DisplayName)
+			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
+				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
+				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
+				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
+				!job.Location.Remote && !job.Location.Hybrid {
+				continue
+			}
+
+			var modality opportunity.Modality
+			if job.Location.Remote {
+				modality = opportunity.ModalityRemoto
+			} else if job.Location.Hybrid {
+				modality = opportunity.ModalityHibrido
+			} else {
+				modality = opportunity.ModalityPresencial
+			}
+
+			opp := opportunity.Opportunity{
+				ExternalID:     fmt.Sprintf("ashby-%s", job.ID),
+				Source:         opportunity.SourceAshby,
+				Company:        company.Name,
+				Title:          job.Title,
+				ContractType:   a.DetermineContractType(job.Title),
+				Modality:       modality,
+				ServiceType:    a.DetermineServiceType(job.Title),
+				Location:       job.Location.DisplayName,
+				ApplicationURL: job.URL.Application,
+				IsActive:       true,
+			}
+			allOpps = append(allOpps, opp)
+		}
+	}
+
+	return allOpps, nil
 }
 
 func (s *ScraperService) RunScraping(ctx context.Context) error {
