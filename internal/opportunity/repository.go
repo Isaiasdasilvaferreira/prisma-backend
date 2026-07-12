@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
 	"github.com/rs/zerolog/log"
 )
@@ -45,7 +44,6 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 	var result []Opportunity
 	err := r.getClient().DB.From("opportunities").
 		Insert(map[string]interface{}{
-			"id":              uuid.New().String(),
 			"external_id":     opp.ExternalID,
 			"source":          opp.Source,
 			"company":         opp.Company,
