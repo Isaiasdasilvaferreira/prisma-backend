@@ -142,7 +142,33 @@ func (g *GreenhouseScraper) GetSource() opportunity.Source {
 }
 
 func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
-	companies := []string{"company1", "company2"}
+	companies := []string{
+		"figma",
+		"airbnb",
+		"dropbox",
+		"shopify",
+		"notion",
+		"stripe",
+		"lever",
+		"pinterest",
+		"spotify",
+		"uber",
+		"netflix",
+		"google",
+		"apple",
+		"microsoft",
+		"amazon",
+		"adobe",
+		"canva",
+		"sketch",
+		"invision",
+		"marvelapp",
+		"protopie",
+		"webflow",
+		"squarespace",
+		"wix",
+		"godaddy",
+	}
 	var allOpps []opportunity.Opportunity
 
 	for _, company := range companies {
@@ -214,7 +240,32 @@ func (l *LeverScraper) GetSource() opportunity.Source {
 }
 
 func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
-	companies := []string{"company1", "company2"}
+	companies := []string{
+		"figma",
+		"airbnb",
+		"dropbox",
+		"shopify",
+		"notion",
+		"stripe",
+		"pinterest",
+		"spotify",
+		"uber",
+		"netflix",
+		"google",
+		"apple",
+		"microsoft",
+		"amazon",
+		"adobe",
+		"canva",
+		"sketch",
+		"invision",
+		"marvelapp",
+		"protopie",
+		"webflow",
+		"squarespace",
+		"wix",
+		"godaddy",
+	}
 	var allOpps []opportunity.Opportunity
 
 	for _, company := range companies {
@@ -353,7 +404,8 @@ func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, so
 		allOpps = allOpps[:limit]
 	}
 
-	for range allOpps {
+	for i := range allOpps {
+		allOpps[i].UserID = userID.String()
 		if err := s.userSvc.IncrementUsedCount(ctx, userID); err != nil {
 			log.Error().Err(err).Msg("Failed to increment usage count")
 		}
