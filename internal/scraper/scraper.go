@@ -331,8 +331,8 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
 
-	for i, opp := range opps {
-		utils.LogInfo(fmt.Sprintf("Processando oportunidade %d: %s", i, opp.ExternalID))
+	for _, opp := range opps {
+		utils.LogInfo(fmt.Sprintf("Processando oportunidade: %s", opp.ExternalID))
 
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
 		if err != nil {
@@ -386,7 +386,7 @@ func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, so
 		allOpps = allOpps[:limit]
 	}
 
-	for i := range allOpps {
+	for range allOpps {
 		if err := s.userSvc.IncrementUsedCount(ctx, userID); err != nil {
 			utils.LogError("Erro ao incrementar contagem de uso", err)
 			log.Error().Err(err).Msg("Failed to increment usage count")
