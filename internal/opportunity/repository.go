@@ -1,6 +1,7 @@
 package opportunity
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
