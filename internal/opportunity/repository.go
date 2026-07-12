@@ -108,7 +108,7 @@ func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*O
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("external_id", externalID).
+		Filter("external_id", "eq", externalID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError(fmt.Sprintf("GetByExternalID - Erro ao buscar %s", externalID), err)
@@ -130,7 +130,7 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userID).
+		Filter("user_id", "eq", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserID - Erro", err)
@@ -146,10 +146,10 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userID)
+		Filter("user_id", "eq", userID)
 
 	if source != "" {
-		query = query.Eq("source", source)
+		query = query.Filter("source", "eq", source)
 	}
 
 	var result []Opportunity
@@ -173,7 +173,7 @@ func (r *repository) GetAllActive(ctx context.Context, limit int) ([]Opportunity
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("is_active", "true").
+		Filter("is_active", "eq", "true").
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetAllActive - Erro", err)
@@ -194,7 +194,7 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("source", source).
+		Filter("source", "eq", source).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetBySource - Erro", err)
@@ -215,7 +215,7 @@ func (r *repository) CountByUser(ctx context.Context, userID string) (int, error
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("external_id").
-		Eq("user_id", userID).
+		Filter("user_id", "eq", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("CountByUser - Erro", err)
