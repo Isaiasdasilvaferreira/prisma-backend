@@ -7,7 +7,7 @@ import (
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
 
-func CSRFMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func CSRF(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" || r.Method == "PUT" || r.Method == "DELETE" || r.Method == "PATCH" {
 			if !auth.ValidateCSRFToken(r) {
