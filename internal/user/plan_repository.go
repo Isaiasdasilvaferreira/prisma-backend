@@ -18,13 +18,22 @@ type PlanRepository interface {
 }
 
 type planRepository struct {
-	supabase *supabase.Client
+	supabase       *supabase.Client
+	supabaseAdmin  *supabase.Client
 }
 
-func NewPlanRepository(supabase *supabase.Client) PlanRepository {
+func NewPlanRepository(supabase *supabase.Client, supabaseAdmin *supabase.Client) PlanRepository {
 	return &planRepository{
-		supabase: supabase,
+		supabase:      supabase,
+		supabaseAdmin: supabaseAdmin,
 	}
+}
+
+func (r *planRepository) getClient() *supabase.Client {
+	if r.supabaseAdmin != nil {
+		return r.supabaseAdmin
+	}
+	return r.supabase
 }
 
 func (r *planRepository) GetUserPlan(ctx context.Context, userID uuid.UUID) (*UserPlan, error) {
@@ -104,7 +113,7 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 	}
 
 	var result []map[string]interface{}
-	err = r.supabase.DB.From("daily_usage").
+	err = r.getClient().DB.From("daily_usage").
 		Upsert(usageData).
 		Execute(&result)
 	if err != nil {
