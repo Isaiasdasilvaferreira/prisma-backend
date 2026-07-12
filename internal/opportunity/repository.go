@@ -116,7 +116,7 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 	var result []Opportunity
 	err = r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userUUID.String()).
+		Filter("user_id", "eq", userUUID.String()).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserID - Erro", err)
@@ -138,10 +138,10 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userUUID.String())
+		Filter("user_id", "eq", userUUID.String())
 
 	if source != "" {
-		query = query.Eq("source", source)
+		query = query.Filter("source", "eq", source)
 	}
 
 	var result []Opportunity
@@ -215,7 +215,7 @@ func (r *repository) CountByUser(ctx context.Context, userID string) (int, error
 	}
 	err = r.supabase.DB.From("opportunities").
 		Select("count").
-		Eq("user_id", userUUID.String()).
+		Filter("user_id", "eq", userUUID.String()).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("CountByUser - Erro", err)
