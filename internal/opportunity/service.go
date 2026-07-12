@@ -87,11 +87,6 @@ func (s *service) GetOpportunitiesStats(ctx context.Context, userID string) (map
 		modalityStats[string(opp.Modality)]++
 	}
 
-	levelStats := make(map[string]int)
-	for _, opp := range opps {
-		levelStats[string(opp.Level)]++
-	}
-
 	stats := map[string]interface{}{
 		"total":        len(opps),
 		"plan_type":    plan.PlanType,
@@ -99,7 +94,6 @@ func (s *service) GetOpportunitiesStats(ctx context.Context, userID string) (map
 		"by_source":    sourceStats,
 		"by_contract":  contractStats,
 		"by_modality":  modalityStats,
-		"by_level":     levelStats,
 		"recent_count": len(opps),
 	}
 
