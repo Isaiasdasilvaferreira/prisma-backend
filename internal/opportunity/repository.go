@@ -1,7 +1,6 @@
 package opportunity
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
@@ -73,12 +72,33 @@ func (r *repository) CreateMany(ctx context.Context, opps []*Opportunity) error 
 		return nil
 	}
 
+	var inserts []map[string]interface{}
 	for _, opp := range opps {
-		if err := r.Create(ctx, opp); err != nil {
-			return err
-		}
+		inserts = append(inserts, map[string]interface{}{
+			"external_id":     opp.ExternalID,
+			"source":          opp.Source,
+			"company":         opp.Company,
+			"title":           opp.Title,
+			"contract_type":   opp.ContractType,
+			"modality":        opp.Modality,
+			"service_type":    opp.ServiceType,
+			"location":        opp.Location,
+			"application_url": opp.ApplicationURL,
+			"is_active":       opp.IsActive,
+			"user_id":         opp.UserID,
+		})
 	}
 
+	var result []Opportunity
+	err := r.getClient().DB.From("opportunities").
+		Insert(inserts).
+		Execute(&result)
+	if err != nil {
+		utils.LogError("[CreateMany] Erro ao inserir em lote", err)
+		return fmt.Errorf("error creating many opportunities: %w", err)
+	}
+
+	utils.LogInfo(fmt.Sprintf("[CreateMany] %d oportunidades inseridas com sucesso", len(result)))
 	return nil
 }
 
@@ -107,16 +127,10 @@ func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*O
 func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportunity, error) {
 	utils.LogInfo(fmt.Sprintf("GetByUserID - Buscando para userID: %s", userID))
 
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		utils.LogError("GetByUserID - UUID inválido", err)
-		return nil, fmt.Errorf("invalid user ID: %w", err)
-	}
-
 	var result []Opportunity
-	err = r.supabase.DB.From("opportunities").
+	err := r.supabase.DB.From("opportunities").
 		Select("*").
-		Filter("user_id", "eq", userUUID.String()).
+		Eq("user_id", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserID - Erro", err)
@@ -130,22 +144,16 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
 	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - userID: %s, source: %s, limit: %d", userID, source, limit))
 
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		utils.LogError("GetByUserIDWithFilters - UUID inválido", err)
-		return nil, fmt.Errorf("invalid user ID: %w", err)
-	}
-
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
-		Filter("user_id", "eq", userUUID.String())
+		Eq("user_id", userID)
 
 	if source != "" {
-		query = query.Filter("source", "eq", source)
+		query = query.Eq("source", source)
 	}
 
 	var result []Opportunity
-	err = query.Execute(&result)
+	err := query.Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserIDWithFilters - Erro", err)
 		return nil, fmt.Errorf("error getting opportunities with filters: %w", err)
@@ -204,29 +212,16 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 func (r *repository) CountByUser(ctx context.Context, userID string) (int, error) {
 	utils.LogInfo(fmt.Sprintf("CountByUser - userID: %s", userID))
 
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		utils.LogError("CountByUser - UUID inválido", err)
-		return 0, fmt.Errorf("invalid user ID: %w", err)
-	}
-
-	var result []struct {
-		Count int `json:"count"`
-	}
-	err = r.supabase.DB.From("opportunities").
-		Select("count").
-		Filter("user_id", "eq", userUUID.String()).
+	var result []Opportunity
+	err := r.supabase.DB.From("opportunities").
+		Select("external_id").
+		Eq("user_id", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("CountByUser - Erro", err)
 		return 0, fmt.Errorf("error counting opportunities: %w", err)
 	}
 
-	if len(result) == 0 {
-		utils.LogInfo(fmt.Sprintf("CountByUser - Nenhum resultado para userID: %s", userID))
-		return 0, nil
-	}
-
-	utils.LogInfo(fmt.Sprintf("CountByUser - %d oportunidades encontradas", result[0].Count))
-	return result[0].Count, nil
+	utils.LogInfo(fmt.Sprintf("CountByUser - %d oportunidades encontradas", len(result)))
+	return len(result), nil
 }
