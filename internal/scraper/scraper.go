@@ -181,8 +181,6 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		}
 
 		for _, job := range result.Jobs {
-			postedAt, _ := time.Parse(time.RFC3339, job.CreatedAt)
-
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("greenhouse-%d", job.ID),
 				Source:         opportunity.SourceGreenhouse,
@@ -279,7 +277,6 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				ServiceType:    l.DetermineServiceType(posting.Text),
 				Location:       posting.Categories.Location,
 				ApplicationURL: posting.URL,
-				PostedAt:       time.Unix(posting.CreatedAt/1000, 0),
 				IsActive:       true,
 			}
 			allOpps = append(allOpps, opp)
