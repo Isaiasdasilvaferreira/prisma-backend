@@ -46,7 +46,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   3600,
 	})
@@ -57,7 +57,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    csrfToken,
 		HttpOnly: false,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   3600,
 	})
@@ -90,7 +90,7 @@ func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   3600,
 	})
@@ -101,7 +101,7 @@ func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 		Value:    csrfToken,
 		HttpOnly: false,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   3600,
 	})
@@ -136,7 +136,7 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   -1,
 	})
@@ -146,7 +146,7 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		HttpOnly: false,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		Path:     "/",
 		MaxAge:   -1,
 	})
