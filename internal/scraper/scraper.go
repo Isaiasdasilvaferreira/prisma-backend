@@ -273,15 +273,17 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		}
 		defer resp.Body.Close()
 
-		var result []struct {
-			ID         string `json:"id"`
-			Text       string `json:"text"`
-			CreatedAt  int64  `json:"createdAt"`
-			Categories struct {
-				Location   string `json:"location"`
-				Commitment string `json:"commitment"`
-			} `json:"categories"`
-			URL string `json:"url"`
+		var result struct {
+			Data []struct {
+				ID         string `json:"id"`
+				Text       string `json:"text"`
+				CreatedAt  int64  `json:"createdAt"`
+				Categories struct {
+					Location   string `json:"location"`
+					Commitment string `json:"commitment"`
+				} `json:"categories"`
+				URL string `json:"url"`
+			} `json:"data"`
 		}
 
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -289,7 +291,7 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			continue
 		}
 
-		for _, posting := range result {
+		for _, posting := range result.Data {
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("lever-%s", posting.ID),
 				Source:         opportunity.SourceLever,
