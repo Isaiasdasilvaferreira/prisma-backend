@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
-	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
 )
 
