@@ -142,20 +142,22 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - source: %s, limit: %d (global)", source, limit))
 
 	var result []Opportunity
-	query := r.supabaseAdmin.DB.From("opportunities").Select("*")
+	var err error
 
 	if source != "" {
-		result, err := query.Filter("source", "eq", source).Execute(&result)
-		if err != nil {
-			utils.LogError("GetByUserIDWithFilters - Erro", err)
-			return nil, fmt.Errorf("error getting opportunities with filters: %w", err)
-		}
+		err = r.supabaseAdmin.DB.From("opportunities").
+			Select("*").
+			Filter("source", "eq", source).
+			Execute(&result)
 	} else {
-		err := query.Execute(&result)
-		if err != nil {
-			utils.LogError("GetByUserIDWithFilters - Erro", err)
-			return nil, fmt.Errorf("error getting opportunities: %w", err)
-		}
+		err = r.supabaseAdmin.DB.From("opportunities").
+			Select("*").
+			Execute(&result)
+	}
+
+	if err != nil {
+		utils.LogError("GetByUserIDWithFilters - Erro", err)
+		return nil, fmt.Errorf("error getting opportunities: %w", err)
 	}
 
 	if limit > 0 && len(result) > limit {
