@@ -82,36 +82,47 @@ func (r *repository) CreateMany(ctx context.Context, opps []*Opportunity) error 
 }
 
 func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("GetByExternalID - Buscando: %s", externalID))
+
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("external_id", externalID).
 		Execute(&result)
 	if err != nil {
+		utils.LogError(fmt.Sprintf("GetByExternalID - Erro ao buscar %s", externalID), err)
 		return nil, fmt.Errorf("error getting opportunity: %w", err)
 	}
 
 	if len(result) == 0 {
+		utils.LogInfo(fmt.Sprintf("GetByExternalID - Nenhum resultado para %s", externalID))
 		return nil, nil
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetByExternalID - Encontrado: %s", externalID))
 	return &result[0], nil
 }
 
 func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("GetByUserID - Buscando para userID: %s", userID))
+
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("user_id", userID).
 		Execute(&result)
 	if err != nil {
+		utils.LogError("GetByUserID - Erro", err)
 		return nil, fmt.Errorf("error getting opportunities by user: %w", err)
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetByUserID - %d oportunidades encontradas", len(result)))
 	return result, nil
 }
 
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - userID: %s, source: %s, limit: %d", userID, source, limit))
+
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("user_id", userID)
@@ -123,6 +134,7 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 	var result []Opportunity
 	err := query.Execute(&result)
 	if err != nil {
+		utils.LogError("GetByUserIDWithFilters - Erro", err)
 		return nil, fmt.Errorf("error getting opportunities with filters: %w", err)
 	}
 
@@ -130,16 +142,20 @@ func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, 
 		result = result[:limit]
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - %d oportunidades encontradas", len(result)))
 	return result, nil
 }
 
 func (r *repository) GetAllActive(ctx context.Context, limit int) ([]Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("GetAllActive - limit: %d", limit))
+
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("is_active", "true").
 		Execute(&result)
 	if err != nil {
+		utils.LogError("GetAllActive - Erro", err)
 		return nil, fmt.Errorf("error getting active opportunities: %w", err)
 	}
 
@@ -147,16 +163,20 @@ func (r *repository) GetAllActive(ctx context.Context, limit int) ([]Opportunity
 		result = result[:limit]
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetAllActive - %d oportunidades encontradas", len(result)))
 	return result, nil
 }
 
 func (r *repository) GetBySource(ctx context.Context, source string, limit int) ([]Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("GetBySource - source: %s, limit: %d", source, limit))
+
 	var result []Opportunity
 	err := r.supabase.DB.From("opportunities").
 		Select("*").
 		Eq("source", source).
 		Execute(&result)
 	if err != nil {
+		utils.LogError("GetBySource - Erro", err)
 		return nil, fmt.Errorf("error getting opportunities by source: %w", err)
 	}
 
@@ -164,10 +184,13 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 		result = result[:limit]
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetBySource - %d oportunidades encontradas", len(result)))
 	return result, nil
 }
 
 func (r *repository) CountByUser(ctx context.Context, userID string) (int, error) {
+	utils.LogInfo(fmt.Sprintf("CountByUser - userID: %s", userID))
+
 	var result []struct {
 		Count int `json:"count"`
 	}
@@ -176,12 +199,15 @@ func (r *repository) CountByUser(ctx context.Context, userID string) (int, error
 		Eq("user_id", userID).
 		Execute(&result)
 	if err != nil {
+		utils.LogError("CountByUser - Erro", err)
 		return 0, fmt.Errorf("error counting opportunities: %w", err)
 	}
 
 	if len(result) == 0 {
+		utils.LogInfo(fmt.Sprintf("CountByUser - Nenhum resultado para userID: %s", userID))
 		return 0, nil
 	}
 
+	utils.LogInfo(fmt.Sprintf("CountByUser - %d oportunidades encontradas", result[0].Count))
 	return result[0].Count, nil
 }
