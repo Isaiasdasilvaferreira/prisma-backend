@@ -76,13 +76,13 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		}
 	}))
 
-	mux.HandleFunc("/api/logs/error", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/api/logs/error", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "logs/error.txt")
-	}))
-	mux.HandleFunc("/api/logs/info", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+	})
+	mux.HandleFunc("/api/logs/info", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "logs/info.txt")
-	}))
-	mux.HandleFunc("/api/logs/data", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+	})
+	mux.HandleFunc("/api/logs/data", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "logs/data.txt")
-	}))
+	})
 }
