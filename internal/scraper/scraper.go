@@ -386,7 +386,7 @@ func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, so
 		allOpps = allOpps[:limit]
 	}
 
-	for range allOpps {
+	if len(allOpps) > 0 {
 		if err := s.userSvc.IncrementUsedCount(ctx, userID); err != nil {
 			utils.LogError("Erro ao incrementar contagem de uso", err)
 			log.Error().Err(err).Msg("Failed to increment usage count")
