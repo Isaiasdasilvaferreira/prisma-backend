@@ -8,15 +8,11 @@ type OpportunityResponse struct {
 	Source         string    `json:"source"`
 	Company        string    `json:"company"`
 	Title          string    `json:"title"`
-	Description    string    `json:"description"`
 	ContractType   string    `json:"contract_type"`
 	Modality       string    `json:"modality"`
-	Level          string    `json:"level"`
 	ServiceType    string    `json:"service_type"`
 	Location       string    `json:"location"`
-	SalaryRange    string    `json:"salary_range"`
 	ApplicationURL string    `json:"application_url"`
-	PostedAt       time.Time `json:"posted_at"`
 	IsActive       bool      `json:"is_active"`
 	CreatedAt      time.Time `json:"created_at"`
 }
