@@ -76,11 +76,12 @@ func (r *planRepository) UpdateUserPlan(ctx context.Context, userID uuid.UUID, p
 
 func (r *planRepository) GetDailyUsage(ctx context.Context, userID uuid.UUID) (int, error) {
 	today := time.Now().Format("2006-01-02")
+	client := r.getClient()
 
 	var result []struct {
 		UsageCount int `json:"usage_count"`
 	}
-	err := r.supabase.DB.From("daily_usage").
+	err := client.DB.From("daily_usage").
 		Select("usage_count").
 		Eq("user_id", userID.String()).
 		Eq("usage_date", today).
@@ -100,31 +101,18 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 	today := time.Now().Format("2006-01-02")
 	client := r.getClient()
 
-	currentUsage, err := r.GetDailyUsage(ctx, userID)
+	existing, err := r.GetDailyUsage(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	newUsage := currentUsage + count
+	var result []map[string]interface{}
 
-	if currentUsage == 0 {
-		insertData := map[string]interface{}{
-			"user_id":     userID.String(),
-			"usage_date":  today,
-			"usage_count": newUsage,
-		}
-		var result []map[string]interface{}
-		err = client.DB.From("daily_usage").
-			Insert(insertData).
-			Execute(&result)
-		if err != nil {
-			return fmt.Errorf("failed to insert daily usage: %w", err)
-		}
-	} else {
+	if existing > 0 {
+		newUsage := existing + count
 		updateData := map[string]interface{}{
 			"usage_count": newUsage,
 		}
-		var result []map[string]interface{}
 		err = client.DB.From("daily_usage").
 			Update(updateData).
 			Eq("user_id", userID.String()).
@@ -132,6 +120,18 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 			Execute(&result)
 		if err != nil {
 			return fmt.Errorf("failed to update daily usage: %w", err)
+		}
+	} else {
+		insertData := map[string]interface{}{
+			"user_id":     userID.String(),
+			"usage_date":  today,
+			"usage_count": count,
+		}
+		err = client.DB.From("daily_usage").
+			Insert(insertData).
+			Execute(&result)
+		if err != nil {
+			return fmt.Errorf("failed to insert daily usage: %w", err)
 		}
 	}
 
