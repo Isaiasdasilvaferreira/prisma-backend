@@ -22,13 +22,13 @@ type AuthRoutes struct {
 	opportunityController *opportunity.Controller
 }
 
-func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseClient *supabase.Client) *AuthRoutes {
+func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseClient *supabase.Client, supabaseAdmin *supabase.Client) *AuthRoutes {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 	authController := auth.NewAuthController(authService)
 
-	planRepo := user.NewPlanRepository(supabaseClient)
+	planRepo := user.NewPlanRepository(supabaseClient, supabaseAdmin)
 	userSvc := user.NewService(planRepo)
-	oppRepo := opportunity.NewRepository(supabaseClient)
+	oppRepo := opportunity.NewRepository(supabaseClient, supabaseAdmin)
 
 	planService := plans.NewPlanService(planRepo)
 	planController := plans.NewPlanController(planService)
