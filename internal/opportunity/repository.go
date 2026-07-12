@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
+	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
 )
 
@@ -106,10 +107,16 @@ func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*O
 func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportunity, error) {
 	utils.LogInfo(fmt.Sprintf("GetByUserID - Buscando para userID: %s", userID))
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		utils.LogError("GetByUserID - UUID inválido", err)
+		return nil, fmt.Errorf("invalid user ID: %w", err)
+	}
+
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err = r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userID).
+		Eq("user_id", userUUID.String()).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserID - Erro", err)
@@ -123,16 +130,22 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
 	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - userID: %s, source: %s, limit: %d", userID, source, limit))
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		utils.LogError("GetByUserIDWithFilters - UUID inválido", err)
+		return nil, fmt.Errorf("invalid user ID: %w", err)
+	}
+
 	query := r.supabase.DB.From("opportunities").
 		Select("*").
-		Eq("user_id", userID)
+		Eq("user_id", userUUID.String())
 
 	if source != "" {
 		query = query.Eq("source", source)
 	}
 
 	var result []Opportunity
-	err := query.Execute(&result)
+	err = query.Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserIDWithFilters - Erro", err)
 		return nil, fmt.Errorf("error getting opportunities with filters: %w", err)
@@ -191,12 +204,18 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 func (r *repository) CountByUser(ctx context.Context, userID string) (int, error) {
 	utils.LogInfo(fmt.Sprintf("CountByUser - userID: %s", userID))
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		utils.LogError("CountByUser - UUID inválido", err)
+		return 0, fmt.Errorf("invalid user ID: %w", err)
+	}
+
 	var result []struct {
 		Count int `json:"count"`
 	}
-	err := r.supabase.DB.From("opportunities").
+	err = r.supabase.DB.From("opportunities").
 		Select("count").
-		Eq("user_id", userID).
+		Eq("user_id", userUUID.String()).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("CountByUser - Erro", err)
