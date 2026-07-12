@@ -39,7 +39,7 @@ func (r *repository) getClient() *supabase.Client {
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
-	utils.LogInfo(fmt.Sprintf("[Create] Iniciando - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID))
+	utils.LogInfo(fmt.Sprintf("[Create] Iniciando - ExternalID: %s", opp.ExternalID))
 	utils.LogData(opp)
 
 	var result []Opportunity
@@ -55,7 +55,6 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 			"location":        opp.Location,
 			"application_url": opp.ApplicationURL,
 			"is_active":       opp.IsActive,
-			"user_id":         opp.UserID,
 		}).
 		Execute(&result)
 	if err != nil {
@@ -85,7 +84,6 @@ func (r *repository) CreateMany(ctx context.Context, opps []*Opportunity) error 
 			"location":        opp.Location,
 			"application_url": opp.ApplicationURL,
 			"is_active":       opp.IsActive,
-			"user_id":         opp.UserID,
 		})
 	}
 
@@ -125,16 +123,15 @@ func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*O
 }
 
 func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportunity, error) {
-	utils.LogInfo(fmt.Sprintf("GetByUserID - Buscando para userID: %s", userID))
+	utils.LogInfo("GetByUserID - Buscando TODAS as oportunidades (global)")
 
 	var result []Opportunity
 	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
-		Filter("user_id", "eq", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("GetByUserID - Erro", err)
-		return nil, fmt.Errorf("error getting opportunities by user: %w", err)
+		return nil, fmt.Errorf("error getting opportunities: %w", err)
 	}
 
 	utils.LogInfo(fmt.Sprintf("GetByUserID - %d oportunidades encontradas", len(result)))
@@ -142,11 +139,10 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 }
 
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
-	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - userID: %s, source: %s, limit: %d", userID, source, limit))
+	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - source: %s, limit: %d (global)", source, limit))
 
 	query := r.supabaseAdmin.DB.From("opportunities").
-		Select("*").
-		Filter("user_id", "eq", userID)
+		Select("*")
 
 	if source != "" {
 		query = query.Filter("source", "eq", source)
@@ -210,12 +206,11 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 }
 
 func (r *repository) CountByUser(ctx context.Context, userID string) (int, error) {
-	utils.LogInfo(fmt.Sprintf("CountByUser - userID: %s", userID))
+	utils.LogInfo("CountByUser - Contando TODAS as oportunidades (global)")
 
 	var result []Opportunity
 	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("external_id").
-		Filter("user_id", "eq", userID).
 		Execute(&result)
 	if err != nil {
 		utils.LogError("CountByUser - Erro", err)
