@@ -48,6 +48,7 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 			"application_url": opp.ApplicationURL,
 			"posted_at":       opp.PostedAt,
 			"is_active":       opp.IsActive,
+			"user_id":         opp.UserID,
 		}).
 		Execute(&result)
 	if err != nil {
