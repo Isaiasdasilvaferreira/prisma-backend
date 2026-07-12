@@ -80,27 +80,6 @@ func (b *BaseScraper) DetermineModality(title, location string) opportunity.Moda
 	return opportunity.ModalityPresencial
 }
 
-func (b *BaseScraper) DetermineLevel(title string) opportunity.Level {
-	titleLower := strings.ToLower(title)
-
-	if strings.Contains(titleLower, "senior") || strings.Contains(titleLower, "sênior") {
-		return opportunity.LevelSenior
-	}
-	if strings.Contains(titleLower, "pleno") || strings.Contains(titleLower, "mid") {
-		return opportunity.LevelPleno
-	}
-	if strings.Contains(titleLower, "junior") || strings.Contains(titleLower, "júnior") {
-		return opportunity.LevelJunior
-	}
-	if strings.Contains(titleLower, "especialista") || strings.Contains(titleLower, "specialist") {
-		return opportunity.LevelEspecialista
-	}
-	if strings.Contains(titleLower, "estagiario") || strings.Contains(titleLower, "trainee") {
-		return opportunity.LevelEstagiario
-	}
-	return ""
-}
-
 func (b *BaseScraper) DetermineServiceType(title string) string {
 	titleLower := strings.ToLower(title)
 
@@ -211,11 +190,9 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 				Title:          job.Title,
 				ContractType:   g.DetermineContractType(job.Title),
 				Modality:       g.DetermineModality(job.Title, job.Location.Name),
-				Level:          g.DetermineLevel(job.Title),
 				ServiceType:    g.DetermineServiceType(job.Title),
 				Location:       job.Location.Name,
 				ApplicationURL: job.AbsoluteURL,
-				PostedAt:       postedAt,
 				IsActive:       true,
 			}
 			allOpps = append(allOpps, opp)
@@ -299,7 +276,6 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				Title:          posting.Text,
 				ContractType:   l.DetermineContractType(posting.Text),
 				Modality:       l.DetermineModality(posting.Text, posting.Categories.Location),
-				Level:          l.DetermineLevel(posting.Text),
 				ServiceType:    l.DetermineServiceType(posting.Text),
 				Location:       posting.Categories.Location,
 				ApplicationURL: posting.URL,
