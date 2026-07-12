@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
+	"github.com/rs/zerolog/log"
 )
 
 type Repository interface {
@@ -39,6 +40,8 @@ func (r *repository) getClient() *supabase.Client {
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
+	log.Printf("📝 [Create] Inserindo oportunidade - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID)
+
 	var result []Opportunity
 	err := r.getClient().DB.From("opportunities").
 		Insert(map[string]interface{}{
@@ -61,9 +64,11 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 		}).
 		Execute(&result)
 	if err != nil {
+		log.Printf("❌ [Create] Erro ao inserir: %v", err)
 		return fmt.Errorf("error creating opportunity: %w", err)
 	}
 
+	log.Printf("✅ [Create] Oportunidade inserida com sucesso: %s", opp.ExternalID)
 	return nil
 }
 
