@@ -12,7 +12,6 @@ const (
 
 type ContractType string
 type Modality string
-type Level string
 
 const (
 	ContractCLT       ContractType = "CLT"
@@ -25,29 +24,17 @@ const (
 	ModalityHibrido   Modality = "Híbrido"
 )
 
-const (
-	LevelJunior      Level = "Júnior"
-	LevelPleno       Level = "Pleno"
-	LevelSenior      Level = "Sênior"
-	LevelEspecialista Level = "Especialista"
-	LevelEstagiario  Level = "Estagiário / Trainee"
-)
-
 type Opportunity struct {
 	ID             string       `json:"id"`
 	ExternalID     string       `json:"external_id"`
 	Source         Source       `json:"source"`
 	Company        string       `json:"company"`
 	Title          string       `json:"title"`
-	Description    string       `json:"description"`
 	ContractType   ContractType `json:"contract_type"`
 	Modality       Modality     `json:"modality"`
-	Level          Level        `json:"level"`
 	ServiceType    string       `json:"service_type"`
 	Location       string       `json:"location"`
-	SalaryRange    string       `json:"salary_range"`
 	ApplicationURL string       `json:"application_url"`
-	PostedAt       time.Time    `json:"posted_at"`
 	IsActive       bool         `json:"is_active"`
 	UserID         string       `json:"user_id"`
 	CreatedAt      time.Time    `json:"created_at"`
