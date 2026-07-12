@@ -38,8 +38,7 @@ func (m *AuthMiddleware) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, auth.UserClaimsKey, claims)
+		ctx := context.WithValue(r.Context(), auth.UserClaimsKey, claims)
 		ctx = context.WithValue(ctx, auth.UserIDKey, claims.UserID)
 		ctx = context.WithValue(ctx, auth.UserRoleKey, claims.Role)
 		r = r.WithContext(ctx)
@@ -73,8 +72,7 @@ func (m *AuthMiddleware) AuthenticateAdmin(next http.HandlerFunc) http.HandlerFu
 			return
 		}
 
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, auth.UserClaimsKey, claims)
+		ctx := context.WithValue(r.Context(), auth.UserClaimsKey, claims)
 		ctx = context.WithValue(ctx, auth.UserIDKey, claims.UserID)
 		ctx = context.WithValue(ctx, auth.UserRoleKey, claims.Role)
 		r = r.WithContext(ctx)
