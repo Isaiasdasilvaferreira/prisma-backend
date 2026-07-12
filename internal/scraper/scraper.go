@@ -344,7 +344,7 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 			log.Info().Msgf("✅ [saveOpportunities] Criando nova oportunidade: %s", opp.ExternalID)
 			if err := s.oppRepo.Create(ctx, &opp); err != nil {
 				log.Error().Msgf("❌ [saveOpportunities] Erro ao criar: %v", err)
-				continue
+				return err
 			}
 			log.Info().Msgf("✅ [saveOpportunities] Oportunidade criada com sucesso: %s", opp.ExternalID)
 		} else {
