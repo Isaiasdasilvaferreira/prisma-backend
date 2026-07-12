@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/nedpals/supabase-go"
-	"github.com/rs/zerolog/log"
 )
 
 type Repository interface {
@@ -39,7 +38,11 @@ func (r *repository) getClient() *supabase.Client {
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
-	log.Info().Msgf("📝 [Create] Inserindo oportunidade - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID)
+	fmt.Println("🔴🔴🔴 [Create] FOI CHAMADO!")
+	fmt.Printf("📝 [Create] ExternalID: %s\n", opp.ExternalID)
+	fmt.Printf("📝 [Create] UserID: %s\n", opp.UserID)
+	fmt.Printf("📝 [Create] Source: %s\n", opp.Source)
+	fmt.Printf("📝 [Create] Title: %s\n", opp.Title)
 
 	var result []Opportunity
 	err := r.getClient().DB.From("opportunities").
@@ -58,11 +61,11 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 		}).
 		Execute(&result)
 	if err != nil {
-		log.Error().Msgf("❌ [Create] Erro ao inserir: %v", err)
+		fmt.Printf("❌❌❌ [Create] ERRO: %v\n", err)
 		return fmt.Errorf("error creating opportunity: %w", err)
 	}
 
-	log.Info().Msgf("✅ [Create] Oportunidade inserida com sucesso: %s", opp.ExternalID)
+	fmt.Printf("✅ [Create] SUCESSO: %s\n", opp.ExternalID)
 	return nil
 }
 
