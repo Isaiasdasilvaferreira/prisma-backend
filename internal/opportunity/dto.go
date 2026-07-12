@@ -1,20 +1,16 @@
 package opportunity
 
-import "time"
-
 type OpportunityResponse struct {
-	ID             string    `json:"id"`
-	ExternalID     string    `json:"external_id"`
-	Source         string    `json:"source"`
-	Company        string    `json:"company"`
-	Title          string    `json:"title"`
-	ContractType   string    `json:"contract_type"`
-	Modality       string    `json:"modality"`
-	ServiceType    string    `json:"service_type"`
-	Location       string    `json:"location"`
-	ApplicationURL string    `json:"application_url"`
-	IsActive       bool      `json:"is_active"`
-	CreatedAt      time.Time `json:"created_at"`
+	ExternalID     string `json:"external_id"`
+	Source         string `json:"source"`
+	Company        string `json:"company"`
+	Title          string `json:"title"`
+	ContractType   string `json:"contract_type"`
+	Modality       string `json:"modality"`
+	ServiceType    string `json:"service_type"`
+	Location       string `json:"location"`
+	ApplicationURL string `json:"application_url"`
+	IsActive       bool   `json:"is_active"`
 }
 
 type ScrapeRequest struct {
