@@ -20,18 +20,27 @@ type Repository interface {
 }
 
 type repository struct {
-	supabase *supabase.Client
+	supabase       *supabase.Client
+	supabaseAdmin  *supabase.Client
 }
 
-func NewRepository(supabase *supabase.Client) Repository {
+func NewRepository(supabase *supabase.Client, supabaseAdmin *supabase.Client) Repository {
 	return &repository{
-		supabase: supabase,
+		supabase:      supabase,
+		supabaseAdmin: supabaseAdmin,
 	}
+}
+
+func (r *repository) getClient() *supabase.Client {
+	if r.supabaseAdmin != nil {
+		return r.supabaseAdmin
+	}
+	return r.supabase
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.getClient().DB.From("opportunities").
 		Insert(map[string]interface{}{
 			"id":              uuid.New().String(),
 			"external_id":     opp.ExternalID,
