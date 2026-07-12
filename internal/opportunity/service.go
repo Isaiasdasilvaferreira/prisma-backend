@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	GetUserOpportunities(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error)
-	GetUserOpportunityByID(ctx context.Context, userID string, oppID string) (*Opportunity, error)
+	GetUserOpportunityByExternalID(ctx context.Context, userID string, externalID string) (*Opportunity, error)
 	GetOpportunitiesBySource(ctx context.Context, source string, limit int) ([]Opportunity, error)
 	GetOpportunitiesStats(ctx context.Context, userID string) (map[string]interface{}, error)
 }
@@ -31,23 +31,18 @@ func (s *service) GetUserOpportunities(ctx context.Context, userID string, sourc
 	return s.repo.GetByUserIDWithFilters(ctx, userID, source, limit)
 }
 
-func (s *service) GetUserOpportunityByID(ctx context.Context, userID string, oppID string) (*Opportunity, error) {
-	if _, err := uuid.Parse(oppID); err != nil {
-		return nil, fmt.Errorf("invalid opportunity ID")
-	}
-
-	opps, err := s.repo.GetByUserIDWithFilters(ctx, userID, "", 0)
+func (s *service) GetUserOpportunityByExternalID(ctx context.Context, userID string, externalID string) (*Opportunity, error) {
+	opp, err := s.repo.GetByExternalID(ctx, externalID)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, opp := range opps {
-		if opp.ID == oppID {
-			return &opp, nil
-		}
+	if opp == nil {
+		return nil, fmt.Errorf("opportunity not found")
 	}
-
-	return nil, fmt.Errorf("opportunity not found")
+	if opp.UserID != userID {
+		return nil, fmt.Errorf("opportunity not found")
+	}
+	return opp, nil
 }
 
 func (s *service) GetOpportunitiesBySource(ctx context.Context, source string, limit int) ([]Opportunity, error) {
