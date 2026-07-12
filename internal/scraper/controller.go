@@ -61,7 +61,6 @@ func (c *ScraperController) ScrapeAshby(w http.ResponseWriter, r *http.Request) 
 	response := make([]opportunity.OpportunityResponse, len(opps))
 	for i, opp := range opps {
 		response[i] = opportunity.OpportunityResponse{
-			ID:             opp.ID,
 			ExternalID:     opp.ExternalID,
 			Source:         string(opp.Source),
 			Company:        opp.Company,
@@ -72,7 +71,6 @@ func (c *ScraperController) ScrapeAshby(w http.ResponseWriter, r *http.Request) 
 			Location:       opp.Location,
 			ApplicationURL: opp.ApplicationURL,
 			IsActive:       opp.IsActive,
-			CreatedAt:      opp.CreatedAt,
 		}
 	}
 
@@ -106,7 +104,6 @@ func (c *ScraperController) ScrapeGreenhouse(w http.ResponseWriter, r *http.Requ
 	response := make([]opportunity.OpportunityResponse, len(opps))
 	for i, opp := range opps {
 		response[i] = opportunity.OpportunityResponse{
-			ID:             opp.ID,
 			ExternalID:     opp.ExternalID,
 			Source:         string(opp.Source),
 			Company:        opp.Company,
@@ -117,7 +114,6 @@ func (c *ScraperController) ScrapeGreenhouse(w http.ResponseWriter, r *http.Requ
 			Location:       opp.Location,
 			ApplicationURL: opp.ApplicationURL,
 			IsActive:       opp.IsActive,
-			CreatedAt:      opp.CreatedAt,
 		}
 	}
 
@@ -151,7 +147,6 @@ func (c *ScraperController) ScrapeLever(w http.ResponseWriter, r *http.Request) 
 	response := make([]opportunity.OpportunityResponse, len(opps))
 	for i, opp := range opps {
 		response[i] = opportunity.OpportunityResponse{
-			ID:             opp.ID,
 			ExternalID:     opp.ExternalID,
 			Source:         string(opp.Source),
 			Company:        opp.Company,
@@ -162,7 +157,6 @@ func (c *ScraperController) ScrapeLever(w http.ResponseWriter, r *http.Request) 
 			Location:       opp.Location,
 			ApplicationURL: opp.ApplicationURL,
 			IsActive:       opp.IsActive,
-			CreatedAt:      opp.CreatedAt,
 		}
 	}
 
@@ -207,7 +201,6 @@ func (c *ScraperController) ScrapeAll(w http.ResponseWriter, r *http.Request) {
 	response := make([]opportunity.OpportunityResponse, len(allOpps))
 	for i, opp := range allOpps {
 		response[i] = opportunity.OpportunityResponse{
-			ID:             opp.ID,
 			ExternalID:     opp.ExternalID,
 			Source:         string(opp.Source),
 			Company:        opp.Company,
@@ -218,7 +211,6 @@ func (c *ScraperController) ScrapeAll(w http.ResponseWriter, r *http.Request) {
 			Location:       opp.Location,
 			ApplicationURL: opp.ApplicationURL,
 			IsActive:       opp.IsActive,
-			CreatedAt:      opp.CreatedAt,
 		}
 	}
 
