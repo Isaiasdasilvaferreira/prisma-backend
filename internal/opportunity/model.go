@@ -25,7 +25,6 @@ const (
 )
 
 type Opportunity struct {
-	ID             string       `json:"id"`
 	ExternalID     string       `json:"external_id"`
 	Source         Source       `json:"source"`
 	Company        string       `json:"company"`
