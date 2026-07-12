@@ -75,4 +75,14 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 			r.opportunityController.GetUserOpportunities(w, req)
 		}
 	}))
+
+	mux.HandleFunc("/api/logs/error", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "logs/error.txt")
+	}))
+	mux.HandleFunc("/api/logs/info", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "logs/info.txt")
+	}))
+	mux.HandleFunc("/api/logs/data", r.authMiddleware.AuthenticateAdmin(func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "logs/data.txt")
+	}))
 }
