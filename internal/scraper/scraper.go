@@ -10,6 +10,7 @@ import (
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/opportunity"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 	"github.com/google/uuid"
 	"github.com/nedpals/supabase-go"
 	"github.com/rs/zerolog/log"
@@ -305,61 +306,79 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 }
 
 func (s *ScraperService) RunScraping(ctx context.Context) error {
+	utils.LogInfo("RunScraping iniciado")
 	log.Info().Msg("Starting scraping...")
 
 	for source, scraper := range s.scrapers {
+		utils.LogInfo(fmt.Sprintf("Raspando fonte: %s", source))
 		log.Info().Str("source", string(source)).Msg("Scraping source")
 		opps, err := scraper.Scrape(ctx)
 
 		if err != nil {
+			utils.LogError(fmt.Sprintf("Scraping falhou para %s", source), err)
 			log.Error().Err(err).Str("source", string(source)).Msg("Scraping failed")
 			continue
 		}
 
-		if err := s.saveOpportunities(ctx, opps); err != nil {
-			log.Error().Err(err).Str("source", string(source)).Msg("Failed to save")
-			continue
-		}
-
+		utils.LogInfo(fmt.Sprintf("Fonte %s retornou %d oportunidades", source, len(opps)))
 		log.Info().Str("source", string(source)).Int("count", len(opps)).Msg("Scraping completed")
 	}
 
+	utils.LogInfo("RunScraping finalizado")
 	return nil
 }
 
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
-	for _, opp := range opps {
+	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
+
+	for i, opp := range opps {
+		utils.LogInfo(fmt.Sprintf("Processando oportunidade %d: %s", i, opp.ExternalID))
+
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
 		if err != nil {
+			utils.LogError(fmt.Sprintf("Erro ao verificar existência de %s", opp.ExternalID), err)
 			return err
 		}
 
 		if existing == nil {
+			utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
 			if err := s.oppRepo.Create(ctx, &opp); err != nil {
+				utils.LogError(fmt.Sprintf("Erro ao criar %s", opp.ExternalID), err)
 				return err
 			}
+			utils.LogInfo(fmt.Sprintf("Oportunidade criada com sucesso: %s", opp.ExternalID))
+		} else {
+			utils.LogInfo(fmt.Sprintf("Oportunidade já existe: %s", opp.ExternalID))
 		}
 	}
+
+	utils.LogInfo("saveOpportunities finalizado")
 	return nil
 }
 
 func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, source opportunity.Source, limit int) ([]opportunity.Opportunity, error) {
+	utils.LogInfo(fmt.Sprintf("ScrapeForUser - UserID: %s, Source: %s, Limit: %d", userID.String(), source, limit))
+
 	canScrape, remaining, err := s.userSvc.CanScrapeOpportunities(ctx, userID)
 	if err != nil {
+		utils.LogError("Erro ao verificar permissões de scraping", err)
 		return nil, fmt.Errorf("error checking scrape permissions: %w", err)
 	}
 
 	if !canScrape {
+		utils.LogInfo(fmt.Sprintf("Limite diário atingido. Restam: %d", remaining))
 		return nil, fmt.Errorf("daily limit reached. Remaining: %d", remaining)
 	}
 
 	scraper, exists := s.scrapers[source]
 	if !exists {
+		utils.LogError(fmt.Sprintf("Scraper não encontrado: %s", source), nil)
 		return nil, fmt.Errorf("scraper not found for source: %s", source)
 	}
 
 	allOpps, err := scraper.Scrape(ctx)
 	if err != nil {
+		utils.LogError(fmt.Sprintf("Erro ao raspar %s", source), err)
 		return nil, fmt.Errorf("error scraping %s: %w", source, err)
 	}
 
@@ -370,9 +389,11 @@ func (s *ScraperService) ScrapeForUser(ctx context.Context, userID uuid.UUID, so
 	for i := range allOpps {
 		allOpps[i].UserID = userID.String()
 		if err := s.userSvc.IncrementUsedCount(ctx, userID); err != nil {
+			utils.LogError("Erro ao incrementar contagem de uso", err)
 			log.Error().Err(err).Msg("Failed to increment usage count")
 		}
 	}
 
+	utils.LogInfo(fmt.Sprintf("ScrapeForUser retornando %d oportunidades", len(allOpps)))
 	return allOpps, nil
 }
