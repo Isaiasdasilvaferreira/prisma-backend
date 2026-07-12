@@ -1,6 +1,7 @@
 package opportunity
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,11 +21,16 @@ func NewController(service Service) *Controller {
 }
 
 func (c *Controller) GetUserOpportunities(w http.ResponseWriter, r *http.Request) {
+	utils.LogInfo("🔴 GetUserOpportunities CHAMADO")
+
 	userID, ok := auth.GetUserIDFromContext(r.Context())
 	if !ok {
+		utils.LogError("GetUserOpportunities - User not authenticated", nil)
 		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+
+	utils.LogInfo(fmt.Sprintf("GetUserOpportunities - UserID do contexto: %s", userID))
 
 	source := r.URL.Query().Get("source")
 	limitStr := r.URL.Query().Get("limit")
@@ -37,9 +43,12 @@ func (c *Controller) GetUserOpportunities(w http.ResponseWriter, r *http.Request
 
 	opps, err := c.service.GetUserOpportunities(r.Context(), userID, source, limit)
 	if err != nil {
+		utils.LogError("GetUserOpportunities - Erro ao buscar oportunidades", err)
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	utils.LogInfo(fmt.Sprintf("GetUserOpportunities - %d oportunidades encontradas", len(opps)))
 
 	response := make([]OpportunityResponse, len(opps))
 	for i, opp := range opps {
@@ -50,8 +59,11 @@ func (c *Controller) GetUserOpportunities(w http.ResponseWriter, r *http.Request
 }
 
 func (c *Controller) GetUserOpportunityByExternalID(w http.ResponseWriter, r *http.Request) {
+	utils.LogInfo("🔴 GetUserOpportunityByExternalID CHAMADO")
+
 	userID, ok := auth.GetUserIDFromContext(r.Context())
 	if !ok {
+		utils.LogError("GetUserOpportunityByExternalID - User not authenticated", nil)
 		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
@@ -59,8 +71,11 @@ func (c *Controller) GetUserOpportunityByExternalID(w http.ResponseWriter, r *ht
 	pathParts := strings.Split(r.URL.Path, "/")
 	externalID := pathParts[len(pathParts)-1]
 
+	utils.LogInfo(fmt.Sprintf("GetUserOpportunityByExternalID - UserID: %s, ExternalID: %s", userID, externalID))
+
 	opp, err := c.service.GetUserOpportunityByExternalID(r.Context(), userID, externalID)
 	if err != nil {
+		utils.LogError("GetUserOpportunityByExternalID - Oportunidade não encontrada", err)
 		utils.ErrorResponse(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -69,6 +84,8 @@ func (c *Controller) GetUserOpportunityByExternalID(w http.ResponseWriter, r *ht
 }
 
 func (c *Controller) GetOpportunitiesBySource(w http.ResponseWriter, r *http.Request) {
+	utils.LogInfo("🔴 GetOpportunitiesBySource CHAMADO")
+
 	pathParts := strings.Split(r.URL.Path, "/")
 	source := pathParts[len(pathParts)-1]
 
@@ -80,11 +97,16 @@ func (c *Controller) GetOpportunitiesBySource(w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetOpportunitiesBySource - Source: %s, Limit: %d", source, limit))
+
 	opps, err := c.service.GetOpportunitiesBySource(r.Context(), source, limit)
 	if err != nil {
+		utils.LogError("GetOpportunitiesBySource - Erro ao buscar oportunidades", err)
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	utils.LogInfo(fmt.Sprintf("GetOpportunitiesBySource - %d oportunidades encontradas", len(opps)))
 
 	response := make([]OpportunityResponse, len(opps))
 	for i, opp := range opps {
@@ -95,14 +117,20 @@ func (c *Controller) GetOpportunitiesBySource(w http.ResponseWriter, r *http.Req
 }
 
 func (c *Controller) GetOpportunitiesStats(w http.ResponseWriter, r *http.Request) {
+	utils.LogInfo("🔴 GetOpportunitiesStats CHAMADO")
+
 	userID, ok := auth.GetUserIDFromContext(r.Context())
 	if !ok {
+		utils.LogError("GetOpportunitiesStats - User not authenticated", nil)
 		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
+	utils.LogInfo(fmt.Sprintf("GetOpportunitiesStats - UserID: %s", userID))
+
 	stats, err := c.service.GetOpportunitiesStats(r.Context(), userID)
 	if err != nil {
+		utils.LogError("GetOpportunitiesStats - Erro ao buscar estatísticas", err)
 		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
