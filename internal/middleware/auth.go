@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
@@ -21,19 +20,17 @@ func NewAuthMiddleware(authService *auth.SupabaseAuth) *AuthMiddleware {
 
 func (m *AuthMiddleware) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			utils.ErrorResponse(w, http.StatusUnauthorized, "Missing authorization header")
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Missing authentication token")
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid authorization header format")
+		tokenString := cookie.Value
+		if tokenString == "" {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid token")
 			return
 		}
-
-		tokenString := parts[1]
 
 		claims, err := m.authService.VerifyToken(tokenString)
 		if err != nil {
@@ -53,19 +50,17 @@ func (m *AuthMiddleware) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 
 func (m *AuthMiddleware) AuthenticateAdmin(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			utils.ErrorResponse(w, http.StatusUnauthorized, "Missing authorization header")
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Missing authentication token")
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid authorization header format")
+		tokenString := cookie.Value
+		if tokenString == "" {
+			utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid token")
 			return
 		}
-
-		tokenString := parts[1]
 
 		claims, err := m.authService.VerifyToken(tokenString)
 		if err != nil {
