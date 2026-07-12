@@ -123,31 +123,27 @@ func (g *GreenhouseScraper) GetSource() opportunity.Source {
 
 func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
-		"figma",
-		"airbnb",
-		"dropbox",
-		"shopify",
-		"notion",
-		"stripe",
-		"lever",
-		"pinterest",
-		"spotify",
-		"uber",
-		"netflix",
-		"google",
-		"apple",
-		"microsoft",
-		"amazon",
-		"adobe",
-		"canva",
-		"sketch",
-		"invision",
-		"marvelapp",
-		"protopie",
-		"webflow",
-		"squarespace",
-		"wix",
-		"godaddy",
+		"nubank",
+		"ifood",
+		"lojadoze",
+		"meliuz",
+		"quintoandar",
+		"contaazul",
+		"omni",
+		"gympass",
+		"loggi",
+		"zarp",
+		"c6bank",
+		"bancointer",
+		"picpay",
+		"stone",
+		"pagseguro",
+		"mercadolivre",
+		"olx",
+		"99",
+		"rappi",
+		"dafiti",
+		"madeiramadeira",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -182,6 +178,14 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		}
 
 		for _, job := range result.Jobs {
+			location := strings.ToLower(job.Location.Name)
+			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
+				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
+				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
+				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") {
+				continue
+			}
+
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("greenhouse-%d", job.ID),
 				Source:         opportunity.SourceGreenhouse,
@@ -217,20 +221,27 @@ func (l *LeverScraper) GetSource() opportunity.Source {
 
 func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
-		"figma",
-		"airbnb",
-		"dropbox",
-		"shopify",
-		"notion",
-		"stripe",
-		"pinterest",
-		"uber",
-		"google",
-		"apple",
-		"microsoft",
-		"amazon",
-		"adobe",
-		"canva",
+		"nubank",
+		"ifood",
+		"lojadoze",
+		"meliuz",
+		"quintoandar",
+		"contaazul",
+		"omni",
+		"gympass",
+		"loggi",
+		"zarp",
+		"c6bank",
+		"bancointer",
+		"picpay",
+		"stone",
+		"pagseguro",
+		"mercadolivre",
+		"olx",
+		"99",
+		"rappi",
+		"dafiti",
+		"madeiramadeira",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -268,6 +279,14 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		}
 
 		for _, posting := range result.Data {
+			location := strings.ToLower(posting.Categories.Location)
+			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
+				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
+				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
+				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") {
+				continue
+			}
+
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("lever-%s", posting.ID),
 				Source:         opportunity.SourceLever,
