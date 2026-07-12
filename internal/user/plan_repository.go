@@ -98,6 +98,7 @@ func (r *planRepository) GetDailyUsage(ctx context.Context, userID uuid.UUID) (i
 
 func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UUID, count int) error {
 	today := time.Now().Format("2006-01-02")
+	client := r.getClient()
 
 	currentUsage, err := r.GetDailyUsage(ctx, userID)
 	if err != nil {
@@ -106,18 +107,32 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 
 	newUsage := currentUsage + count
 
-	usageData := map[string]interface{}{
-		"user_id":     userID.String(),
-		"usage_date":  today,
-		"usage_count": newUsage,
-	}
-
-	var result []map[string]interface{}
-	err = r.getClient().DB.From("daily_usage").
-		Upsert(usageData).
-		Execute(&result)
-	if err != nil {
-		return fmt.Errorf("failed to update daily usage: %w", err)
+	if currentUsage == 0 {
+		insertData := map[string]interface{}{
+			"user_id":     userID.String(),
+			"usage_date":  today,
+			"usage_count": newUsage,
+		}
+		var result []map[string]interface{}
+		err = client.DB.From("daily_usage").
+			Insert(insertData).
+			Execute(&result)
+		if err != nil {
+			return fmt.Errorf("failed to insert daily usage: %w", err)
+		}
+	} else {
+		updateData := map[string]interface{}{
+			"usage_count": newUsage,
+		}
+		var result []map[string]interface{}
+		err = client.DB.From("daily_usage").
+			Update(updateData).
+			Eq("user_id", userID.String()).
+			Eq("usage_date", today).
+			Execute(&result)
+		if err != nil {
+			return fmt.Errorf("failed to update daily usage: %w", err)
+		}
 	}
 
 	return nil
