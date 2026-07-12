@@ -109,7 +109,7 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 	var result []map[string]interface{}
 
 	if existing > 0 {
-		newUsage := existing + count
+		newUsage := existing + 1
 		updateData := map[string]interface{}{
 			"usage_count": newUsage,
 		}
@@ -125,7 +125,7 @@ func (r *planRepository) IncrementDailyUsage(ctx context.Context, userID uuid.UU
 		insertData := map[string]interface{}{
 			"user_id":     userID.String(),
 			"usage_date":  today,
-			"usage_count": count,
+			"usage_count": 1,
 		}
 		err = client.DB.From("daily_usage").
 			Insert(insertData).
