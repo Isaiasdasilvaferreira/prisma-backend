@@ -49,6 +49,7 @@ type Opportunity struct {
 	ApplicationURL string       `json:"application_url"`
 	PostedAt       time.Time    `json:"posted_at"`
 	IsActive       bool         `json:"is_active"`
+	UserID         string       `json:"user_id"`
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      time.Time    `json:"updated_at"`
 }
