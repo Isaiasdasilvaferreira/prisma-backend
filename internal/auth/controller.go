@@ -3,7 +3,6 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
