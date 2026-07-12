@@ -40,7 +40,7 @@ func (r *repository) getClient() *supabase.Client {
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
-	log.Printf("📝 [Create] Inserindo oportunidade - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID)
+	log.Info().Msgf("📝 [Create] Inserindo oportunidade - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID)
 
 	var result []Opportunity
 	err := r.getClient().DB.From("opportunities").
@@ -64,11 +64,11 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 		}).
 		Execute(&result)
 	if err != nil {
-		log.Printf("❌ [Create] Erro ao inserir: %v", err)
+		log.Error().Msgf("❌ [Create] Erro ao inserir: %v", err)
 		return fmt.Errorf("error creating opportunity: %w", err)
 	}
 
-	log.Printf("✅ [Create] Oportunidade inserida com sucesso: %s", opp.ExternalID)
+	log.Info().Msgf("✅ [Create] Oportunidade inserida com sucesso: %s", opp.ExternalID)
 	return nil
 }
 
