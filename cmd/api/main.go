@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -21,17 +20,17 @@ func main() {
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
 
 	if err := os.MkdirAll("logs", 0755); err != nil {
-		log.Printf("⚠️ Erro ao criar pasta logs: %v", err)
+		log.Error().Err(err).Msg("⚠️ Erro ao criar pasta logs")
 	}
 
 	logFiles := []string{"logs/error.txt", "logs/info.txt", "logs/data.txt"}
 	for _, file := range logFiles {
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			if f, err := os.Create(file); err != nil {
-				log.Printf("⚠️ Erro ao criar %s: %v", file, err)
+				log.Error().Err(err).Msgf("⚠️ Erro ao criar %s", file)
 			} else {
 				f.Close()
-				log.Printf("✅ Arquivo criado: %s", file)
+				log.Info().Msgf("✅ Arquivo criado: %s", file)
 			}
 		}
 	}
