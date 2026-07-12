@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 	"github.com/nedpals/supabase-go"
 )
 
@@ -38,11 +39,8 @@ func (r *repository) getClient() *supabase.Client {
 }
 
 func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
-	fmt.Println("🔴🔴🔴 [Create] FOI CHAMADO!")
-	fmt.Printf("📝 [Create] ExternalID: %s\n", opp.ExternalID)
-	fmt.Printf("📝 [Create] UserID: %s\n", opp.UserID)
-	fmt.Printf("📝 [Create] Source: %s\n", opp.Source)
-	fmt.Printf("📝 [Create] Title: %s\n", opp.Title)
+	utils.LogInfo(fmt.Sprintf("[Create] Iniciando - ExternalID: %s, UserID: %s", opp.ExternalID, opp.UserID))
+	utils.LogData(opp)
 
 	var result []Opportunity
 	err := r.getClient().DB.From("opportunities").
@@ -61,11 +59,11 @@ func (r *repository) Create(ctx context.Context, opp *Opportunity) error {
 		}).
 		Execute(&result)
 	if err != nil {
-		fmt.Printf("❌❌❌ [Create] ERRO: %v\n", err)
+		utils.LogError(fmt.Sprintf("[Create] Erro ao inserir - ExternalID: %s", opp.ExternalID), err)
 		return fmt.Errorf("error creating opportunity: %w", err)
 	}
 
-	fmt.Printf("✅ [Create] SUCESSO: %s\n", opp.ExternalID)
+	utils.LogInfo(fmt.Sprintf("[Create] Sucesso - ExternalID: %s", opp.ExternalID))
 	return nil
 }
 
