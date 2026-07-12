@@ -22,7 +22,7 @@ func main() {
 
 	supabaseAuth := auth.NewSupabaseAuth(cfg.SupabaseURL, cfg.SupabaseAnonKey, cfg.SupabaseJWTSecret)
 
-	authRoutes := routes.NewAuthRoutes(cfg, supabaseAuth, db.Supabase)
+	authRoutes := routes.NewAuthRoutes(cfg, supabaseAuth, db.Supabase, db.SupabaseAdmin)
 
 	mux := http.NewServeMux()
 
