@@ -2,11 +2,9 @@ package scraper
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -229,14 +227,11 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 
 type LeverScraper struct {
 	*BaseScraper
-	apiKey string
 }
 
 func NewLeverScraper(supabase *supabase.Client) *LeverScraper {
-	apiKey := os.Getenv("LEVER_API_KEY")
 	return &LeverScraper{
-		BaseScraper: NewBaseScraper(supabase, "https://api.lever.co/v1"),
-		apiKey:      apiKey,
+		BaseScraper: NewBaseScraper(supabase, "https://api.lever.co/v0"),
 	}
 }
 
@@ -245,11 +240,6 @@ func (l *LeverScraper) GetSource() opportunity.Source {
 }
 
 func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
-	if l.apiKey == "" {
-		log.Warn().Msg("LEVER_API_KEY not set, skipping Lever scraping")
-		return []opportunity.Opportunity{}, nil
-	}
-
 	companies := []string{
 		"figma",
 		"airbnb",
@@ -268,8 +258,6 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 	}
 	var allOpps []opportunity.Opportunity
 
-	auth := base64.StdEncoding.EncodeToString([]byte(l.apiKey + ":"))
-
 	for _, company := range companies {
 		url := fmt.Sprintf("%s/postings/%s", l.baseURL, company)
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -278,19 +266,12 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			continue
 		}
 
-		req.Header.Set("Authorization", "Basic "+auth)
-
 		resp, err := l.client.Do(req)
 		if err != nil {
 			log.Error().Err(err).Str("company", company).Msg("Failed to fetch jobs")
 			continue
 		}
 		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			log.Error().Int("status", resp.StatusCode).Str("company", company).Msg("Lever API returned error status")
-			continue
-		}
 
 		var result []struct {
 			ID         string `json:"id"`
