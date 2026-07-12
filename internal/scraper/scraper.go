@@ -328,31 +328,18 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 }
 
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
-	log.Info().Msgf("📦 [saveOpportunities] Recebidas %d oportunidades para salvar", len(opps))
-
-	for i, opp := range opps {
-		log.Info().Msgf("📝 [saveOpportunities] Opp %d: ExternalID=%s, Title=%s, UserID=%s",
-			i, opp.ExternalID, opp.Title, opp.UserID)
-
+	for _, opp := range opps {
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
 		if err != nil {
-			log.Error().Msgf("❌ [saveOpportunities] Erro ao verificar existência: %v", err)
-			continue
+			return err
 		}
 
 		if existing == nil {
-			log.Info().Msgf("✅ [saveOpportunities] Criando nova oportunidade: %s", opp.ExternalID)
 			if err := s.oppRepo.Create(ctx, &opp); err != nil {
-				log.Error().Msgf("❌ [saveOpportunities] Erro ao criar: %v", err)
-				continue
+				return err
 			}
-			log.Info().Msgf("✅ [saveOpportunities] Oportunidade criada com sucesso: %s", opp.ExternalID)
-		} else {
-			log.Info().Msgf("⏭️ [saveOpportunities] Oportunidade já existe: %s", opp.ExternalID)
 		}
 	}
-
-	log.Info().Msg("✅ [saveOpportunities] Processamento concluído")
 	return nil
 }
 
