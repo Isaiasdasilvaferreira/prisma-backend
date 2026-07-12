@@ -39,9 +39,6 @@ func (s *service) GetUserOpportunityByExternalID(ctx context.Context, userID str
 	if opp == nil {
 		return nil, fmt.Errorf("opportunity not found")
 	}
-	if opp.UserID != userID {
-		return nil, fmt.Errorf("opportunity not found")
-	}
 	return opp, nil
 }
 
