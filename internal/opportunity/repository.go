@@ -106,7 +106,7 @@ func (r *repository) GetByExternalID(ctx context.Context, externalID string) (*O
 	utils.LogInfo(fmt.Sprintf("GetByExternalID - Buscando: %s", externalID))
 
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
 		Filter("external_id", "eq", externalID).
 		Execute(&result)
@@ -128,7 +128,7 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 	utils.LogInfo(fmt.Sprintf("GetByUserID - Buscando para userID: %s", userID))
 
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
 		Filter("user_id", "eq", userID).
 		Execute(&result)
@@ -144,7 +144,7 @@ func (r *repository) GetByUserID(ctx context.Context, userID string) ([]Opportun
 func (r *repository) GetByUserIDWithFilters(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
 	utils.LogInfo(fmt.Sprintf("GetByUserIDWithFilters - userID: %s, source: %s, limit: %d", userID, source, limit))
 
-	query := r.supabase.DB.From("opportunities").
+	query := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
 		Filter("user_id", "eq", userID)
 
@@ -171,7 +171,7 @@ func (r *repository) GetAllActive(ctx context.Context, limit int) ([]Opportunity
 	utils.LogInfo(fmt.Sprintf("GetAllActive - limit: %d", limit))
 
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
 		Filter("is_active", "eq", "true").
 		Execute(&result)
@@ -192,7 +192,7 @@ func (r *repository) GetBySource(ctx context.Context, source string, limit int) 
 	utils.LogInfo(fmt.Sprintf("GetBySource - source: %s, limit: %d", source, limit))
 
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("*").
 		Filter("source", "eq", source).
 		Execute(&result)
@@ -213,7 +213,7 @@ func (r *repository) CountByUser(ctx context.Context, userID string) (int, error
 	utils.LogInfo(fmt.Sprintf("CountByUser - userID: %s", userID))
 
 	var result []Opportunity
-	err := r.supabase.DB.From("opportunities").
+	err := r.supabaseAdmin.DB.From("opportunities").
 		Select("external_id").
 		Filter("user_id", "eq", userID).
 		Execute(&result)
