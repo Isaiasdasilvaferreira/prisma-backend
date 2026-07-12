@@ -70,7 +70,7 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		if strings.Contains(path, "/source/") {
 			r.opportunityController.GetOpportunitiesBySource(w, req)
 		} else if path != "/api/opportunities/" && path != "/api/opportunities" {
-			r.opportunityController.GetUserOpportunityByID(w, req)
+			r.opportunityController.GetUserOpportunityByExternalID(w, req)
 		} else {
 			r.opportunityController.GetUserOpportunities(w, req)
 		}
