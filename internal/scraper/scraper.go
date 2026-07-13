@@ -208,6 +208,26 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		"notion",
 		"uber",
 		"airbnb",
+		"google",
+		"apple",
+		"microsoft",
+		"amazon",
+		"adobe",
+		"canva",
+		"spotify",
+		"netflix",
+		"shopify",
+		"stripe",
+		"dropbox",
+		"pinterest",
+		"invision",
+		"webflow",
+		"sketch",
+		"marvelapp",
+		"protopie",
+		"squarespace",
+		"wix",
+		"godaddy",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -247,11 +267,6 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 			}
 
 			if g.IsExcludedRole(job.Title) {
-				continue
-			}
-
-			location := job.Location.Name
-			if !IsLocationInBrazil(location) && !IsRemote(location) {
 				continue
 			}
 
@@ -463,10 +478,21 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 	}
 
 	var finalOpps []opportunity.Opportunity
+
 	if len(brazilOpps) > 0 {
 		finalOpps = brazilOpps
-	} else {
-		finalOpps = internationalOpps
+		utils.LogInfo(fmt.Sprintf("Adicionando %d vagas do Brasil primeiro", len(brazilOpps)))
+	}
+
+	if len(finalOpps) < 10 && len(internationalOpps) > 0 {
+		needed := 10 - len(finalOpps)
+		if len(internationalOpps) > needed {
+			finalOpps = append(finalOpps, internationalOpps[:needed]...)
+			utils.LogInfo(fmt.Sprintf("Adicionando %d vagas internacionais para completar 10", needed))
+		} else {
+			finalOpps = append(finalOpps, internationalOpps...)
+			utils.LogInfo(fmt.Sprintf("Adicionando %d vagas internacionais (total disponível)", len(internationalOpps)))
+		}
 	}
 
 	companyCount := make(map[string]int)
@@ -480,13 +506,11 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 		filteredOpps = append(filteredOpps, opp)
 	}
 
-	if len(filteredOpps) < 10 {
-		utils.LogInfo(fmt.Sprintf("Apenas %d oportunidades encontradas (menos que 10)", len(filteredOpps)))
-	} else {
+	if len(filteredOpps) > 10 {
 		filteredOpps = filteredOpps[:10]
 	}
 
-	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa, total 10)", len(filteredOpps)))
+	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades (máx 2 por empresa, máximo 10)", len(filteredOpps)))
 
 	for _, opp := range filteredOpps {
 		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
