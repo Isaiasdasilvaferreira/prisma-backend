@@ -185,30 +185,11 @@ func (g *GreenhouseScraper) GetSource() opportunity.Source {
 
 func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
+		"nubank",
 		"figma",
-		"airbnb",
-		"dropbox",
-		"shopify",
 		"notion",
-		"stripe",
-		"pinterest",
-		"spotify",
 		"uber",
-		"netflix",
-		"google",
-		"apple",
-		"microsoft",
-		"amazon",
-		"adobe",
-		"canva",
-		"sketch",
-		"invision",
-		"marvelapp",
-		"protopie",
-		"webflow",
-		"squarespace",
-		"wix",
-		"godaddy",
+		"airbnb",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -291,10 +272,6 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 	}{
 		{"cursor", "cursor"},
 		{"notion", "notion"},
-		{"figma", "figma"},
-		{"canva", "canva"},
-		{"adobe", "adobe"},
-		{"webflow", "webflow"},
 	}
 
 	var allOpps []opportunity.Opportunity
