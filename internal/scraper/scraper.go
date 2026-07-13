@@ -110,12 +110,13 @@ func (b *BaseScraper) DetermineServiceType(title string) string {
 func (b *BaseScraper) IsDesignRelated(title string) bool {
 	titleLower := strings.ToLower(title)
 	designKeywords := []string{
-		"design", "designer", "ui", "ux", "product design", "graphic",
+		"ui", "ux", "product design", "graphic",
 		"visual", "branding", "motion", "editorial", "packaging",
 		"social media", "identidade visual", "landing page", "web design",
 		"interaction", "user interface", "user experience", "creative",
 		"art director", "design gráfico", "ux design", "ui design",
-		"illustration", "ilustração", "product designer",
+		"illustration", "ilustração", "product designer", "design",
+		"designer",
 	}
 
 	for _, keyword := range designKeywords {
@@ -142,27 +143,30 @@ func (g *GreenhouseScraper) GetSource() opportunity.Source {
 
 func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
-		"nubank",
-		"ifood",
-		"lojadoze",
-		"meliuz",
-		"quintoandar",
-		"contaazul",
-		"omni",
-		"gympass",
-		"loggi",
-		"zarp",
-		"c6bank",
-		"bancointer",
-		"picpay",
-		"stone",
-		"pagseguro",
-		"mercadolivre",
-		"olx",
-		"99",
-		"rappi",
-		"dafiti",
-		"madeiramadeira",
+		"figma",
+		"airbnb",
+		"dropbox",
+		"shopify",
+		"notion",
+		"stripe",
+		"pinterest",
+		"spotify",
+		"uber",
+		"netflix",
+		"google",
+		"apple",
+		"microsoft",
+		"amazon",
+		"adobe",
+		"canva",
+		"sketch",
+		"invision",
+		"marvelapp",
+		"protopie",
+		"webflow",
+		"squarespace",
+		"wix",
+		"godaddy",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -236,12 +240,35 @@ func (l *LeverScraper) GetSource() opportunity.Source {
 
 func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
-		"jobgether",
+		"figma",
+		"airbnb",
+		"dropbox",
+		"shopify",
+		"notion",
+		"stripe",
+		"pinterest",
+		"spotify",
+		"uber",
+		"netflix",
+		"google",
+		"apple",
+		"microsoft",
+		"amazon",
+		"adobe",
+		"canva",
+		"sketch",
+		"invision",
+		"marvelapp",
+		"protopie",
+		"webflow",
+		"squarespace",
+		"wix",
+		"godaddy",
 	}
 	var allOpps []opportunity.Opportunity
 
 	for _, company := range companies {
-		url := fmt.Sprintf("%s/postings/%s?mode=json&limit=20", l.baseURL, company)
+		url := fmt.Sprintf("%s/postings/%s", l.baseURL, company)
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			log.Error().Err(err).Str("company", company).Msg("Failed to create request")
@@ -318,6 +345,10 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 	}{
 		{"cursor", "cursor"},
 		{"notion", "notion"},
+		{"figma", "figma"},
+		{"canva", "canva"},
+		{"adobe", "adobe"},
+		{"webflow", "webflow"},
 	}
 
 	var allOpps []opportunity.Opportunity
