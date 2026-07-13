@@ -169,6 +169,24 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 	return false
 }
 
+func (b *BaseScraper) IsLocationInBrazil(location string) bool {
+	locationLower := strings.ToLower(location)
+	return strings.Contains(locationLower, "brasil") ||
+		strings.Contains(locationLower, "brazil") ||
+		strings.Contains(locationLower, "são paulo") ||
+		strings.Contains(locationLower, "são paulo") ||
+		strings.Contains(locationLower, "rio de janeiro") ||
+		strings.Contains(locationLower, "rio") ||
+		strings.Contains(locationLower, "sp") ||
+		strings.Contains(locationLower, "rj")
+}
+
+func (b *BaseScraper) IsRemote(location string) bool {
+	locationLower := strings.ToLower(location)
+	return strings.Contains(locationLower, "remote") ||
+		strings.Contains(locationLower, "remoto")
+}
+
 type GreenhouseScraper struct {
 	*BaseScraper
 }
@@ -229,6 +247,11 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 			}
 
 			if g.IsExcludedRole(job.Title) {
+				continue
+			}
+
+			location := job.Location.Name
+			if !g.IsLocationInBrazil(location) && !g.IsRemote(location) {
 				continue
 			}
 
@@ -349,6 +372,11 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				continue
 			}
 
+			locationDisplay := job.Location.DisplayName
+			if !a.IsLocationInBrazil(locationDisplay) && !job.Location.Remote && !job.Location.Hybrid {
+				continue
+			}
+
 			var modality opportunity.Modality
 			if job.Location.Remote {
 				modality = opportunity.ModalityRemoto
@@ -358,7 +386,6 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				modality = opportunity.ModalityPresencial
 			}
 
-			locationDisplay := job.Location.DisplayName
 			if locationDisplay == "" {
 				locationDisplay = "Remote"
 			}
@@ -414,7 +441,8 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
 
-	var filteredOpps []opportunity.Opportunity
+	var brazilOpps []opportunity.Opportunity
+	var internationalOpps []opportunity.Opportunity
 
 	for _, opp := range opps {
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
@@ -423,12 +451,36 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 			return err
 		}
 
-		if existing == nil {
-			filteredOpps = append(filteredOpps, opp)
+		if existing != nil {
+			continue
+		}
+
+		if s.IsLocationInBrazil(opp.Location) {
+			brazilOpps = append(brazilOpps, opp)
+		} else {
+			internationalOpps = append(internationalOpps, opp)
 		}
 	}
 
-	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas", len(filteredOpps)))
+	var finalOpps []opportunity.Opportunity
+	if len(brazilOpps) > 0 {
+		finalOpps = brazilOpps
+	} else {
+		finalOpps = internationalOpps
+	}
+
+	companyCount := make(map[string]int)
+	var filteredOpps []opportunity.Opportunity
+
+	for _, opp := range finalOpps {
+		if companyCount[opp.Company] >= 2 {
+			continue
+		}
+		companyCount[opp.Company]++
+		filteredOpps = append(filteredOpps, opp)
+	}
+
+	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa)", len(filteredOpps)))
 
 	for _, opp := range filteredOpps {
 		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
