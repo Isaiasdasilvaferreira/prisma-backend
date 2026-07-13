@@ -63,11 +63,19 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	})
 	w.Header().Set("X-CSRF-Token", csrfToken)
 
+	name := ""
+	if claims.UserMetadata != nil {
+		if n, ok := claims.UserMetadata["name"].(string); ok {
+			name = n
+		}
+	}
+
 	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
 		"user": map[string]interface{}{
 			"id":    claims.UserID,
 			"email": claims.Email,
 			"role":  claims.Role,
+			"name":  name,
 		},
 	})
 }
@@ -107,11 +115,19 @@ func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 	w.Header().Set("X-CSRF-Token", csrfToken)
 
+	name := ""
+	if claims.UserMetadata != nil {
+		if n, ok := claims.UserMetadata["name"].(string); ok {
+			name = n
+		}
+	}
+
 	utils.SuccessResponse(w, http.StatusCreated, map[string]interface{}{
 		"user": map[string]interface{}{
 			"id":    claims.UserID,
 			"email": claims.Email,
 			"role":  claims.Role,
+			"name":  name,
 		},
 	})
 }
@@ -123,10 +139,24 @@ func (c *AuthController) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := c.authService.GetUserByID(r.Context(), claims.UserID)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	name := ""
+	if user.UserMetadata != nil {
+		if n, ok := user.UserMetadata["name"].(string); ok {
+			name = n
+		}
+	}
+
 	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
 		"id":    claims.UserID,
 		"email": claims.Email,
 		"role":  claims.Role,
+		"name":  name,
 	})
 }
 
