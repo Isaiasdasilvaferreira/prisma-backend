@@ -37,7 +37,6 @@ func NewScraperService(supabase *supabase.Client, userSvc user.Service, oppRepo 
 	}
 
 	s.scrapers[opportunity.SourceGreenhouse] = NewGreenhouseScraper(supabase)
-	s.scrapers[opportunity.SourceLever] = NewLeverScraper(supabase)
 	s.scrapers[opportunity.SourceAshby] = NewAshbyScraper(supabase)
 
 	return s
@@ -109,17 +108,60 @@ func (b *BaseScraper) DetermineServiceType(title string) string {
 
 func (b *BaseScraper) IsDesignRelated(title string) bool {
 	titleLower := strings.ToLower(title)
+
 	designKeywords := []string{
-		"ui", "ux", "product design", "graphic",
-		"visual", "branding", "motion", "editorial", "packaging",
-		"social media", "identidade visual", "landing page", "web design",
-		"interaction", "user interface", "user experience", "creative",
-		"art director", "design gráfico", "ux design", "ui design",
-		"illustration", "ilustração", "product designer", "design",
-		"designer",
+		"design", "designer",
+		"ui", "ux",
+		"product design", "product designer",
+		"graphic", "graphic designer",
+		"visual", "visual designer",
+		"branding", "brand designer",
+		"motion", "motion designer",
+		"editorial", "editorial designer",
+		"packaging", "packaging designer",
+		"social media", "social media designer",
+		"identidade visual",
+		"landing page", "landing page designer",
+		"web design", "web designer",
+		"interaction", "interaction designer",
+		"user interface", "user interface designer",
+		"user experience", "user experience designer",
+		"creative", "creative designer",
+		"art director",
+		"design gráfico",
+		"ilustração", "illustration",
+		"ux design", "ui design",
 	}
 
 	for _, keyword := range designKeywords {
+		if strings.Contains(titleLower, keyword) {
+			return true
+		}
+	}
+	return false
+}
+
+func (b *BaseScraper) IsExcludedRole(title string) bool {
+	titleLower := strings.ToLower(title)
+
+	excludedKeywords := []string{
+		"account", "account manager", "account executive",
+		"analista de contas", "analista de reclame aqui",
+		"sales", "vendas", "comercial",
+		"farmer", "farming",
+		"reclame aqui", "escalados",
+		"customer success", "sucesso do cliente",
+		"marketing", "mercado",
+		"finance", "finanças",
+		"hr", "rh", "recursos humanos",
+		"admin", "administrativo",
+		"legal", "jurídico",
+		"operation", "operações",
+		"support", "suporte",
+		"it", "ti", "tecnologia",
+	}
+
+	for _, keyword := range excludedKeywords {
 		if strings.Contains(titleLower, keyword) {
 			return true
 		}
@@ -205,6 +247,10 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 				continue
 			}
 
+			if g.IsExcludedRole(job.Title) {
+				continue
+			}
+
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("greenhouse-%d", job.ID),
 				Source:         opportunity.SourceGreenhouse,
@@ -215,106 +261,6 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 				ServiceType:    g.DetermineServiceType(job.Title),
 				Location:       job.Location.Name,
 				ApplicationURL: job.AbsoluteURL,
-				IsActive:       true,
-			}
-			allOpps = append(allOpps, opp)
-		}
-	}
-
-	return allOpps, nil
-}
-
-type LeverScraper struct {
-	*BaseScraper
-}
-
-func NewLeverScraper(supabase *supabase.Client) *LeverScraper {
-	return &LeverScraper{
-		BaseScraper: NewBaseScraper(supabase, "https://api.lever.co/v0"),
-	}
-}
-
-func (l *LeverScraper) GetSource() opportunity.Source {
-	return opportunity.SourceLever
-}
-
-func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
-	companies := []string{
-		"figma",
-		"airbnb",
-		"dropbox",
-		"shopify",
-		"notion",
-		"stripe",
-		"pinterest",
-		"spotify",
-		"uber",
-		"netflix",
-		"google",
-		"apple",
-		"microsoft",
-		"amazon",
-		"adobe",
-		"canva",
-		"sketch",
-		"invision",
-		"marvelapp",
-		"protopie",
-		"webflow",
-		"squarespace",
-		"wix",
-		"godaddy",
-	}
-	var allOpps []opportunity.Opportunity
-
-	for _, company := range companies {
-		url := fmt.Sprintf("%s/postings/%s", l.baseURL, company)
-		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-		if err != nil {
-			log.Error().Err(err).Str("company", company).Msg("Failed to create request")
-			continue
-		}
-
-		resp, err := l.client.Do(req)
-		if err != nil {
-			log.Error().Err(err).Str("company", company).Msg("Failed to fetch jobs")
-			continue
-		}
-		defer resp.Body.Close()
-
-		var result struct {
-			Data []struct {
-				ID         string `json:"id"`
-				Text       string `json:"text"`
-				CreatedAt  int64  `json:"createdAt"`
-				Categories struct {
-					Location   string `json:"location"`
-					Commitment string `json:"commitment"`
-				} `json:"categories"`
-				URL string `json:"url"`
-			} `json:"data"`
-		}
-
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			log.Error().Err(err).Str("company", company).Msg("Failed to decode")
-			continue
-		}
-
-		for _, posting := range result.Data {
-			if !l.IsDesignRelated(posting.Text) {
-				continue
-			}
-
-			opp := opportunity.Opportunity{
-				ExternalID:     fmt.Sprintf("lever-%s", posting.ID),
-				Source:         opportunity.SourceLever,
-				Company:        company,
-				Title:          posting.Text,
-				ContractType:   l.DetermineContractType(posting.Text),
-				Modality:       l.DetermineModality(posting.Text, posting.Categories.Location),
-				ServiceType:    l.DetermineServiceType(posting.Text),
-				Location:       posting.Categories.Location,
-				ApplicationURL: posting.URL,
 				IsActive:       true,
 			}
 			allOpps = append(allOpps, opp)
@@ -419,6 +365,10 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			}
 
 			if !a.IsDesignRelated(job.Title) {
+				continue
+			}
+
+			if a.IsExcludedRole(job.Title) {
 				continue
 			}
 
