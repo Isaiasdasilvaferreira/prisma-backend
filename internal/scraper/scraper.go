@@ -480,7 +480,13 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 		filteredOpps = append(filteredOpps, opp)
 	}
 
-	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa)", len(filteredOpps)))
+	if len(filteredOpps) < 10 {
+		utils.LogInfo(fmt.Sprintf("Apenas %d oportunidades encontradas (menos que 10)", len(filteredOpps)))
+	} else {
+		filteredOpps = filteredOpps[:10]
+	}
+
+	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa, total 10)", len(filteredOpps)))
 
 	for _, opp := range filteredOpps {
 		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
