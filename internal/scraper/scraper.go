@@ -245,32 +245,12 @@ func (l *LeverScraper) GetSource() opportunity.Source {
 
 func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, error) {
 	companies := []string{
-		"nubank",
-		"ifood",
-		"lojadoze",
-		"meliuz",
-		"quintoandar",
-		"contaazul",
-		"omni",
-		"gympass",
-		"loggi",
-		"zarp",
-		"c6bank",
-		"bancointer",
-		"picpay",
-		"stone",
-		"pagseguro",
-		"mercadolivre",
-		"olx",
-		"99",
-		"rappi",
-		"dafiti",
-		"madeiramadeira",
+		"jobgether",
 	}
 	var allOpps []opportunity.Opportunity
 
 	for _, company := range companies {
-		url := fmt.Sprintf("%s/postings/%s", l.baseURL, company)
+		url := fmt.Sprintf("%s/postings/%s?mode=json&limit=20", l.baseURL, company)
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			log.Error().Err(err).Str("company", company).Msg("Failed to create request")
@@ -308,11 +288,8 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			}
 
 			location := strings.ToLower(posting.Categories.Location)
-			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
-				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
-				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
-				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
-				!strings.Contains(location, "remote") && !strings.Contains(location, "remoto") {
+			if !strings.Contains(location, "remote") && !strings.Contains(location, "remoto") &&
+				!strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") {
 				continue
 			}
 
@@ -354,27 +331,8 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		Name string
 		Slug string
 	}{
-		{"nubank", "nubank"},
-		{"ifood", "ifood"},
-		{"lojadoze", "lojadoze"},
-		{"meliuz", "meliuz"},
-		{"quintoandar", "quintoandar"},
-		{"contaazul", "contaazul"},
-		{"omni", "omni"},
-		{"gympass", "gympass"},
-		{"loggi", "loggi"},
-		{"zarp", "zarp"},
-		{"c6bank", "c6bank"},
-		{"bancointer", "bancointer"},
-		{"picpay", "picpay"},
-		{"stone", "stone"},
-		{"pagseguro", "pagseguro"},
-		{"mercadolivre", "mercadolivre"},
-		{"olx", "olx"},
-		{"99", "99"},
-		{"rappi", "rappi"},
-		{"dafiti", "dafiti"},
-		{"madeiramadeira", "madeiramadeira"},
+		{"cursor", "cursor"},
+		{"notion", "notion"},
 	}
 
 	var allOpps []opportunity.Opportunity
@@ -399,6 +357,11 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 
 		if resp.StatusCode == 401 || resp.StatusCode == 403 {
 			log.Warn().Str("company", company.Name).Int("status", resp.StatusCode).Msg("Unauthorized or forbidden")
+			continue
+		}
+
+		if resp.StatusCode == 404 {
+			log.Warn().Str("company", company.Name).Msg("Job board not found")
 			continue
 		}
 
@@ -443,12 +406,7 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				continue
 			}
 
-			location := strings.ToLower(job.Location.DisplayName)
-			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
-				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
-				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
-				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
-				!job.Location.Remote && !job.Location.Hybrid {
+			if !job.Location.Remote && !job.Location.Hybrid {
 				continue
 			}
 
@@ -461,6 +419,11 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				modality = opportunity.ModalityPresencial
 			}
 
+			locationDisplay := job.Location.DisplayName
+			if locationDisplay == "" {
+				locationDisplay = "Remote"
+			}
+
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("ashby-%s", job.ID),
 				Source:         opportunity.SourceAshby,
@@ -469,7 +432,7 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				ContractType:   a.DetermineContractType(job.Title),
 				Modality:       modality,
 				ServiceType:    a.DetermineServiceType(job.Title),
-				Location:       job.Location.DisplayName,
+				Location:       locationDisplay,
 				ApplicationURL: job.URL.Application,
 				IsActive:       true,
 			}
