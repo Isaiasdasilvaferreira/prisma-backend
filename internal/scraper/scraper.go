@@ -201,15 +201,6 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 				continue
 			}
 
-			location := strings.ToLower(job.Location.Name)
-			if !strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") &&
-				!strings.Contains(location, "são paulo") && !strings.Contains(location, "são paulo") &&
-				!strings.Contains(location, "rio de janeiro") && !strings.Contains(location, "rio") &&
-				!strings.Contains(location, "sp") && !strings.Contains(location, "rj") &&
-				!strings.Contains(location, "remote") && !strings.Contains(location, "remoto") {
-				continue
-			}
-
 			opp := opportunity.Opportunity{
 				ExternalID:     fmt.Sprintf("greenhouse-%d", job.ID),
 				Source:         opportunity.SourceGreenhouse,
@@ -284,12 +275,6 @@ func (l *LeverScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 
 		for _, posting := range result.Data {
 			if !l.IsDesignRelated(posting.Text) {
-				continue
-			}
-
-			location := strings.ToLower(posting.Categories.Location)
-			if !strings.Contains(location, "remote") && !strings.Contains(location, "remoto") &&
-				!strings.Contains(location, "brasil") && !strings.Contains(location, "brazil") {
 				continue
 			}
 
@@ -406,10 +391,6 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				continue
 			}
 
-			if !job.Location.Remote && !job.Location.Hybrid {
-				continue
-			}
-
 			var modality opportunity.Modality
 			if job.Location.Remote {
 				modality = opportunity.ModalityRemoto
@@ -475,14 +456,9 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
 
-	companyCount := make(map[string]int)
 	var filteredOpps []opportunity.Opportunity
 
 	for _, opp := range opps {
-		if companyCount[opp.Company] >= 2 {
-			continue
-		}
-
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
 		if err != nil {
 			utils.LogError(fmt.Sprintf("Erro ao verificar existência de %s", opp.ExternalID), err)
@@ -490,12 +466,11 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 		}
 
 		if existing == nil {
-			companyCount[opp.Company]++
 			filteredOpps = append(filteredOpps, opp)
 		}
 	}
 
-	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas (máx 2 por empresa)", len(filteredOpps)))
+	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades únicas", len(filteredOpps)))
 
 	for _, opp := range filteredOpps {
 		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
