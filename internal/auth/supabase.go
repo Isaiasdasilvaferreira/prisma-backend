@@ -239,10 +239,52 @@ func (s *SupabaseAuth) GetUser(ctx context.Context, tokenString string) (*Supaba
 	}
 
 	return &SupabaseClaims{
-		UserID:      userResponse.ID,
-		Email:       userResponse.Email,
-		AppMetadata: userResponse.AppMeta,
+		UserID:       userResponse.ID,
+		Email:        userResponse.Email,
+		AppMetadata:  userResponse.AppMeta,
 		UserMetadata: userResponse.UserMeta,
-		Role:        userResponse.Role,
+		Role:         userResponse.Role,
+	}, nil
+}
+
+func (s *SupabaseAuth) GetUserByID(ctx context.Context, userID string) (*SupabaseClaims, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET",
+		fmt.Sprintf("%s/auth/v1/admin/users/%s", s.url, userID), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+s.anonKey)
+	req.Header.Set("apikey", s.anonKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user: status %d", resp.StatusCode)
+	}
+
+	var userResponse struct {
+		ID              string                 `json:"id"`
+		Email           string                 `json:"email"`
+		AppMetaData     map[string]interface{} `json:"app_metadata"`
+		UserMetaData    map[string]interface{} `json:"user_metadata"`
+		RawUserMetaData map[string]interface{} `json:"raw_user_meta_data"`
+		Role            string                 `json:"role"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&userResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &SupabaseClaims{
+		UserID:       userResponse.ID,
+		Email:        userResponse.Email,
+		AppMetadata:  userResponse.AppMetaData,
+		UserMetadata: userResponse.UserMetaData,
+		Role:         userResponse.Role,
 	}, nil
 }
