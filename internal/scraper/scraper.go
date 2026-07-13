@@ -169,7 +169,7 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 	return false
 }
 
-func (b *BaseScraper) IsLocationInBrazil(location string) bool {
+func IsLocationInBrazil(location string) bool {
 	locationLower := strings.ToLower(location)
 	return strings.Contains(locationLower, "brasil") ||
 		strings.Contains(locationLower, "brazil") ||
@@ -181,7 +181,7 @@ func (b *BaseScraper) IsLocationInBrazil(location string) bool {
 		strings.Contains(locationLower, "rj")
 }
 
-func (b *BaseScraper) IsRemote(location string) bool {
+func IsRemote(location string) bool {
 	locationLower := strings.ToLower(location)
 	return strings.Contains(locationLower, "remote") ||
 		strings.Contains(locationLower, "remoto")
@@ -251,7 +251,7 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 			}
 
 			location := job.Location.Name
-			if !g.IsLocationInBrazil(location) && !g.IsRemote(location) {
+			if !IsLocationInBrazil(location) && !IsRemote(location) {
 				continue
 			}
 
@@ -373,7 +373,7 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			}
 
 			locationDisplay := job.Location.DisplayName
-			if !a.IsLocationInBrazil(locationDisplay) && !job.Location.Remote && !job.Location.Hybrid {
+			if !IsLocationInBrazil(locationDisplay) && !job.Location.Remote && !job.Location.Hybrid {
 				continue
 			}
 
@@ -455,7 +455,7 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 			continue
 		}
 
-		if s.IsLocationInBrazil(opp.Location) {
+		if IsLocationInBrazil(opp.Location) {
 			brazilOpps = append(brazilOpps, opp)
 		} else {
 			internationalOpps = append(internationalOpps, opp)
