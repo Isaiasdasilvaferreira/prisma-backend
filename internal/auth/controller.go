@@ -123,15 +123,9 @@ func (c *AuthController) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := c.authService.GetUserByID(r.Context(), claims.UserID)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	name := ""
-	if user.UserMetadata != nil {
-		if n, ok := user.UserMetadata["name"].(string); ok {
+	if claims.UserMetadata != nil {
+		if n, ok := claims.UserMetadata["name"].(string); ok {
 			name = n
 		}
 	}
