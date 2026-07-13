@@ -1,290 +1,171 @@
 package auth
 
 import (
-	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io"
-	"math/big"
 	"net/http"
-	"os"
-	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/utils"
 )
 
-type SupabaseAuth struct {
-	url         string
-	anonKey     string
-	jwtSecret   string
-	httpClient  *http.Client
+type AuthController struct {
+	authService *SupabaseAuth
 }
 
-func NewSupabaseAuth(url, anonKey, jwtSecret string) *SupabaseAuth {
-	return &SupabaseAuth{
-		url:         url,
-		anonKey:     anonKey,
-		jwtSecret:   jwtSecret,
-		httpClient:  &http.Client{},
+func NewAuthController(authService *SupabaseAuth) *AuthController {
+	return &AuthController{
+		authService: authService,
 	}
 }
 
-func (s *SupabaseAuth) SignIn(ctx context.Context, email, password string) (*SupabaseClaims, string, error) {
-	reqBody := map[string]string{
-		"email":    email,
-		"password": password,
-	}
-
-	reqJSON, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST",
-		fmt.Sprintf("%s/auth/v1/token?grant_type=password", s.url),
-		strings.NewReader(string(reqJSON)))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("apikey", s.anonKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, "", fmt.Errorf("supabase auth error: %s", string(body))
-	}
-
-	var response struct {
-		AccessToken string `json:"access_token"`
-		User        struct {
-			ID       string                 `json:"id"`
-			Email    string                 `json:"email"`
-			AppMeta  map[string]interface{} `json:"app_metadata"`
-			UserMeta map[string]interface{} `json:"user_metadata"`
-			Role     string                 `json:"role"`
-		} `json:"user"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, "", fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	claims, err := s.ParseToken(response.AccessToken)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse token: %w", err)
-	}
-
-	return claims, response.AccessToken, nil
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (s *SupabaseAuth) SignUp(ctx context.Context, email, password string, metadata map[string]interface{}) (*SupabaseClaims, string, error) {
-	reqBody := map[string]interface{}{
-		"email":    email,
-		"password": password,
-		"data":     metadata,
-	}
-
-	reqJSON, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST",
-		fmt.Sprintf("%s/auth/v1/signup", s.url),
-		strings.NewReader(string(reqJSON)))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("apikey", s.anonKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, "", fmt.Errorf("supabase signup error: %s", string(body))
-	}
-
-	var response struct {
-		AccessToken string `json:"access_token"`
-		User        struct {
-			ID       string                 `json:"id"`
-			Email    string                 `json:"email"`
-			AppMeta  map[string]interface{} `json:"app_metadata"`
-			UserMeta map[string]interface{} `json:"user_metadata"`
-			Role     string                 `json:"role"`
-		} `json:"user"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, "", fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	claims, err := s.ParseToken(response.AccessToken)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse token: %w", err)
-	}
-
-	return claims, response.AccessToken, nil
+type SignupRequest struct {
+	Email    string                 `json:"email"`
+	Password string                 `json:"password"`
+	Metadata map[string]interface{} `json:"metadata"`
 }
 
-func (s *SupabaseAuth) ParseToken(tokenString string) (*SupabaseClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &SupabaseClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
-			return []byte(s.jwtSecret), nil
-		}
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); ok {
-			jwksJSON := os.Getenv("SUPABASE_JWT_PUBLIC_KEY")
-			if jwksJSON == "" {
-				return nil, fmt.Errorf("SUPABASE_JWT_PUBLIC_KEY environment variable not set")
-			}
+func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
 
-			var jwks struct {
-				Keys []struct {
-					Kid string `json:"kid"`
-					Kty string `json:"kty"`
-					Crv string `json:"crv"`
-					X   string `json:"x"`
-					Y   string `json:"y"`
-				} `json:"keys"`
-			}
+	claims, token, err := c.authService.SignIn(r.Context(), req.Email, req.Password)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusUnauthorized, err.Error())
+		return
+	}
 
-			if err := json.Unmarshal([]byte(jwksJSON), &jwks); err != nil {
-				return nil, fmt.Errorf("failed to parse JWKS: %w", err)
-			}
-
-			if len(jwks.Keys) == 0 {
-				return nil, fmt.Errorf("no keys found in JWKS")
-			}
-
-			decodedX, err := base64.RawURLEncoding.DecodeString(jwks.Keys[0].X)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode X coordinate: %w", err)
-			}
-			decodedY, err := base64.RawURLEncoding.DecodeString(jwks.Keys[0].Y)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode Y coordinate: %w", err)
-			}
-
-			publicKey := &ecdsa.PublicKey{
-				Curve: elliptic.P256(),
-				X:     new(big.Int).SetBytes(decodedX),
-				Y:     new(big.Int).SetBytes(decodedY),
-			}
-
-			return publicKey, nil
-		}
-		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   3600,
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse token: %w", err)
-	}
 
-	if claims, ok := token.Claims.(*SupabaseClaims); ok && token.Valid {
-		return claims, nil
-	}
+	csrfToken := GenerateCSRFToken()
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    csrfToken,
+		HttpOnly: false,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   3600,
+	})
+	w.Header().Set("X-CSRF-Token", csrfToken)
 
-	return nil, fmt.Errorf("invalid token")
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":    claims.UserID,
+			"email": claims.Email,
+			"role":  claims.Role,
+		},
+	})
 }
 
-func (s *SupabaseAuth) VerifyToken(tokenString string) (*SupabaseClaims, error) {
-	return s.ParseToken(tokenString)
+func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
+	var req SignupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	claims, token, err := c.authService.SignUp(r.Context(), req.Email, req.Password, req.Metadata)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   3600,
+	})
+
+	csrfToken := GenerateCSRFToken()
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    csrfToken,
+		HttpOnly: false,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   3600,
+	})
+	w.Header().Set("X-CSRF-Token", csrfToken)
+
+	utils.SuccessResponse(w, http.StatusCreated, map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":    claims.UserID,
+			"email": claims.Email,
+			"role":  claims.Role,
+		},
+	})
 }
 
-func (s *SupabaseAuth) GetUser(ctx context.Context, tokenString string) (*SupabaseClaims, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("%s/auth/v1/user", s.url), nil)
+func (c *AuthController) Me(w http.ResponseWriter, r *http.Request) {
+	claims, ok := GetUserFromContext(r.Context())
+	if !ok {
+		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	user, err := c.authService.GetUserByID(r.Context(), claims.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		utils.ErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	req.Header.Set("Authorization", "Bearer "+tokenString)
-	req.Header.Set("apikey", s.anonKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get user: status %d", resp.StatusCode)
+	name := ""
+	if user.UserMetadata != nil {
+		if n, ok := user.UserMetadata["name"].(string); ok {
+			name = n
+		}
 	}
 
-	var userResponse struct {
-		ID       string                 `json:"id"`
-		Email    string                 `json:"email"`
-		AppMeta  map[string]interface{} `json:"app_metadata"`
-		UserMeta map[string]interface{} `json:"user_metadata"`
-		Role     string                 `json:"role"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&userResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &SupabaseClaims{
-		UserID:       userResponse.ID,
-		Email:        userResponse.Email,
-		AppMetadata:  userResponse.AppMeta,
-		UserMetadata: userResponse.UserMeta,
-		Role:         userResponse.Role,
-	}, nil
+	utils.SuccessResponse(w, http.StatusOK, map[string]interface{}{
+		"id":    claims.UserID,
+		"email": claims.Email,
+		"role":  claims.Role,
+		"name":  name,
+	})
 }
 
-func (s *SupabaseAuth) GetUserByID(ctx context.Context, userID string) (*SupabaseClaims, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("%s/auth/v1/admin/users/%s", s.url, userID), nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
+func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   -1,
+	})
 
-	req.Header.Set("Authorization", "Bearer "+s.anonKey)
-	req.Header.Set("apikey", s.anonKey)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    "",
+		HttpOnly: false,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   -1,
+	})
 
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get user: status %d", resp.StatusCode)
-	}
-
-	var userResponse struct {
-		ID              string                 `json:"id"`
-		Email           string                 `json:"email"`
-		AppMetaData     map[string]interface{} `json:"app_metadata"`
-		UserMetaData    map[string]interface{} `json:"user_metadata"`
-		RawUserMetaData map[string]interface{} `json:"raw_user_meta_data"`
-		Role            string                 `json:"role"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&userResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &SupabaseClaims{
-		UserID:       userResponse.ID,
-		Email:        userResponse.Email,
-		AppMetadata:  userResponse.AppMetaData,
-		UserMetadata: userResponse.UserMetaData,
-		Role:         userResponse.Role,
-	}, nil
+	utils.SuccessResponse(w, http.StatusOK, map[string]string{
+		"message": "Logged out successfully",
+	})
 }
