@@ -131,6 +131,16 @@ func (b *BaseScraper) IsDesignRelated(title string) bool {
 		"design gráfico",
 		"ilustração", "illustration",
 		"ux design", "ui design",
+		"digital designer", "senior designer",
+		"lead designer", "staff designer",
+		"principal designer", "design system",
+		"service designer", "ux researcher",
+		"user researcher", "design lead",
+		"design director", "design manager",
+		"creative director", "brand identity",
+		"visual identity", "interface design",
+		"interactive design", "experience design",
+		"ux/ui", "ui/ux",
 	}
 
 	for _, keyword := range designKeywords {
@@ -146,10 +156,8 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 
 	excludedKeywords := []string{
 		"account", "account manager", "account executive",
-		"analista de contas", "analista de reclame aqui",
 		"sales", "vendas", "comercial",
 		"farmer", "farming",
-		"reclame aqui", "escalados",
 		"customer success", "sucesso do cliente",
 		"marketing", "mercado",
 		"finance", "finanças",
@@ -159,6 +167,12 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 		"operation", "operações",
 		"support", "suporte",
 		"it", "ti", "tecnologia",
+		"engineering", "engenheiro",
+		"developer", "desenvolvedor",
+		"programmer", "programador",
+		"software engineer", "backend",
+		"frontend", "fullstack",
+		"data scientist", "devops",
 	}
 
 	for _, keyword := range excludedKeywords {
@@ -167,24 +181,6 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 		}
 	}
 	return false
-}
-
-func IsLocationInBrazil(location string) bool {
-	locationLower := strings.ToLower(location)
-	return strings.Contains(locationLower, "brasil") ||
-		strings.Contains(locationLower, "brazil") ||
-		strings.Contains(locationLower, "são paulo") ||
-		strings.Contains(locationLower, "são paulo") ||
-		strings.Contains(locationLower, "rio de janeiro") ||
-		strings.Contains(locationLower, "rio") ||
-		strings.Contains(locationLower, "sp") ||
-		strings.Contains(locationLower, "rj")
-}
-
-func IsRemote(location string) bool {
-	locationLower := strings.ToLower(location)
-	return strings.Contains(locationLower, "remote") ||
-		strings.Contains(locationLower, "remoto")
 }
 
 type GreenhouseScraper struct {
@@ -224,6 +220,11 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		"microsoft",
 		"amazon",
 		"netflix",
+		"apple",
+		"salesforce",
+		"linkedin",
+		"zoom",
+		"roblox",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -314,6 +315,12 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		{"rainbow", "rainbow"},
 		{"supabase", "supabase"},
 		{"plaid", "plaid"},
+		{"coinbase", "coinbase"},
+		{"stripe", "stripe"},
+		{"airbnb", "airbnb"},
+		{"discord", "discord"},
+		{"slack", "slack"},
+		{"shopify", "shopify"},
 	}
 
 	var allOpps []opportunity.Opportunity
@@ -392,8 +399,8 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 			}
 
 			locationDisplay := job.Location.DisplayName
-			if !IsLocationInBrazil(locationDisplay) && !job.Location.Remote && !job.Location.Hybrid {
-				continue
+			if locationDisplay == "" {
+				locationDisplay = "Remote"
 			}
 
 			var modality opportunity.Modality
@@ -403,10 +410,6 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 				modality = opportunity.ModalityHibrido
 			} else {
 				modality = opportunity.ModalityPresencial
-			}
-
-			if locationDisplay == "" {
-				locationDisplay = "Remote"
 			}
 
 			opp := opportunity.Opportunity{
@@ -460,8 +463,7 @@ func (s *ScraperService) RunScraping(ctx context.Context) error {
 func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportunity.Opportunity) error {
 	utils.LogInfo(fmt.Sprintf("saveOpportunities chamado com %d oportunidades", len(opps)))
 
-	var brazilOpps []opportunity.Opportunity
-	var internationalOpps []opportunity.Opportunity
+	var filteredOpps []opportunity.Opportunity
 
 	for _, opp := range opps {
 		existing, err := s.oppRepo.GetByExternalID(ctx, opp.ExternalID)
@@ -474,39 +476,6 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 			continue
 		}
 
-		if IsLocationInBrazil(opp.Location) {
-			brazilOpps = append(brazilOpps, opp)
-		} else {
-			internationalOpps = append(internationalOpps, opp)
-		}
-	}
-
-	var finalOpps []opportunity.Opportunity
-
-	if len(brazilOpps) > 0 {
-		finalOpps = brazilOpps
-		utils.LogInfo(fmt.Sprintf("Adicionando %d vagas do Brasil primeiro", len(brazilOpps)))
-	}
-
-	if len(finalOpps) < 10 && len(internationalOpps) > 0 {
-		needed := 10 - len(finalOpps)
-		if len(internationalOpps) > needed {
-			finalOpps = append(finalOpps, internationalOpps[:needed]...)
-			utils.LogInfo(fmt.Sprintf("Adicionando %d vagas internacionais para completar 10", needed))
-		} else {
-			finalOpps = append(finalOpps, internationalOpps...)
-			utils.LogInfo(fmt.Sprintf("Adicionando %d vagas internacionais (total disponível)", len(internationalOpps)))
-		}
-	}
-
-	companyCount := make(map[string]int)
-	var filteredOpps []opportunity.Opportunity
-
-	for _, opp := range finalOpps {
-		if companyCount[opp.Company] >= 2 {
-			continue
-		}
-		companyCount[opp.Company]++
 		filteredOpps = append(filteredOpps, opp)
 	}
 
@@ -514,10 +483,10 @@ func (s *ScraperService) saveOpportunities(ctx context.Context, opps []opportuni
 		filteredOpps = filteredOpps[:10]
 	}
 
-	utils.LogInfo(fmt.Sprintf("Após filtro: %d oportunidades (máx 2 por empresa, máximo 10)", len(filteredOpps)))
+	utils.LogInfo(fmt.Sprintf("Salvando %d oportunidades", len(filteredOpps)))
 
 	for _, opp := range filteredOpps {
-		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s", opp.ExternalID))
+		utils.LogInfo(fmt.Sprintf("Criando nova oportunidade: %s - %s", opp.ExternalID, opp.Title))
 		if err := s.oppRepo.Create(ctx, &opp); err != nil {
 			utils.LogError(fmt.Sprintf("Erro ao criar %s", opp.ExternalID), err)
 			return err
