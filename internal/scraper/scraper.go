@@ -131,15 +131,6 @@ func (b *BaseScraper) IsDesignRelated(title string) bool {
 		"design gráfico",
 		"ilustração", "illustration",
 		"ux design", "ui design",
-		"digital designer", "senior designer",
-		"lead designer", "staff designer",
-		"principal designer", "design system",
-		"service designer", "ux researcher",
-		"user researcher", "design lead",
-		"design director", "design manager",
-		"creative director", "brand identity",
-		"visual identity", "interface design",
-		"interactive design", "experience design",
 	}
 
 	for _, keyword := range designKeywords {
@@ -155,8 +146,10 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 
 	excludedKeywords := []string{
 		"account", "account manager", "account executive",
+		"analista de contas", "analista de reclame aqui",
 		"sales", "vendas", "comercial",
 		"farmer", "farming",
+		"reclame aqui", "escalados",
 		"customer success", "sucesso do cliente",
 		"marketing", "mercado",
 		"finance", "finanças",
@@ -166,12 +159,6 @@ func (b *BaseScraper) IsExcludedRole(title string) bool {
 		"operation", "operações",
 		"support", "suporte",
 		"it", "ti", "tecnologia",
-		"engineering", "engenheiro",
-		"developer", "desenvolvedor",
-		"programmer", "programador",
-		"software engineer", "backend",
-		"frontend", "fullstack",
-		"data scientist", "devops",
 	}
 
 	for _, keyword := range excludedKeywords {
@@ -218,9 +205,7 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 	companies := []string{
 		"figma",
 		"notion",
-		"nubank",
 		"airbnb",
-		"google",
 		"adobe",
 		"spotify",
 		"shopify",
@@ -228,11 +213,17 @@ func (g *GreenhouseScraper) Scrape(ctx context.Context) ([]opportunity.Opportuni
 		"webflow",
 		"invision",
 		"canva",
-		"coinbase",
 		"discord",
 		"slack",
 		"stripe",
 		"pinterest",
+		"coinbase",
+		"nubank",
+		"uber",
+		"google",
+		"microsoft",
+		"amazon",
+		"netflix",
 	}
 	var allOpps []opportunity.Opportunity
 
@@ -321,6 +312,8 @@ func (a *AshbyScraper) Scrape(ctx context.Context) ([]opportunity.Opportunity, e
 		{"vercel", "vercel"},
 		{"raycast", "raycast"},
 		{"rainbow", "rainbow"},
+		{"supabase", "supabase"},
+		{"plaid", "plaid"},
 	}
 
 	var allOpps []opportunity.Opportunity
