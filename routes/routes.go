@@ -11,15 +11,17 @@ import (
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/plans"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/scraper"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/user_opportunity"
 	"github.com/nedpals/supabase-go"
 )
 
 type AuthRoutes struct {
-	authController       *auth.AuthController
-	authMiddleware       *middleware.AuthMiddleware
-	planController       *plans.PlanController
-	scraperController    *scraper.ScraperController
-	opportunityController *opportunity.Controller
+	authController            *auth.AuthController
+	authMiddleware            *middleware.AuthMiddleware
+	planController            *plans.PlanController
+	scraperController         *scraper.ScraperController
+	opportunityController     *opportunity.Controller
+	userOpportunityController *user_opportunity.Controller
 }
 
 func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseClient *supabase.Client, supabaseAdmin *supabase.Client) *AuthRoutes {
@@ -38,12 +40,17 @@ func NewAuthRoutes(cfg *config.Config, authService *auth.SupabaseAuth, supabaseC
 
 	scraperController := scraper.NewScraperController(supabaseClient, userSvc, oppRepo)
 
+	userOpportunityRepo := user_opportunity.NewRepository(supabaseClient, supabaseAdmin)
+	userOpportunityService := user_opportunity.NewService(userOpportunityRepo)
+	userOpportunityController := user_opportunity.NewController(userOpportunityService)
+
 	return &AuthRoutes{
-		authController:       authController,
-		authMiddleware:       authMiddleware,
-		planController:       planController,
-		scraperController:    scraperController,
-		opportunityController: opportunityController,
+		authController:            authController,
+		authMiddleware:            authMiddleware,
+		planController:            planController,
+		scraperController:         scraperController,
+		opportunityController:     opportunityController,
+		userOpportunityController: userOpportunityController,
 	}
 }
 
@@ -75,6 +82,65 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 			r.opportunityController.GetUserOpportunities(w, req)
 		}
 	}))
+
+	mux.HandleFunc("/api/user-opportunities", func(w http.ResponseWriter, req *http.Request) {
+		switch req.Method {
+		case http.MethodPost:
+			r.userOpportunityController.CreateUserOpportunity(w, req)
+		case http.MethodGet:
+			r.userOpportunityController.GetAllUserOpportunities(w, req)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/api/user-opportunities/", func(w http.ResponseWriter, req *http.Request) {
+		path := strings.TrimPrefix(req.URL.Path, "/api/user-opportunities/")
+		parts := strings.Split(path, "/")
+
+		if len(parts) == 0 || parts[0] == "" {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+
+		id := parts[0]
+
+		if len(parts) == 1 {
+			switch req.Method {
+			case http.MethodGet:
+				r.userOpportunityController.GetUserOpportunity(w, req)
+			case http.MethodPut:
+				r.userOpportunityController.UpdateUserOpportunity(w, req)
+			case http.MethodDelete:
+				r.userOpportunityController.DeleteUserOpportunity(w, req)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		if len(parts) == 2 {
+			switch parts[1] {
+			case "approve":
+				if req.Method == http.MethodPatch || req.Method == http.MethodPost {
+					r.userOpportunityController.ApproveUserOpportunity(w, req)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case "reject":
+				if req.Method == http.MethodPatch || req.Method == http.MethodPost {
+					r.userOpportunityController.RejectUserOpportunity(w, req)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			default:
+				http.Error(w, "Invalid endpoint", http.StatusNotFound)
+			}
+			return
+		}
+
+		http.Error(w, "Invalid endpoint", http.StatusNotFound)
+	})
 
 	mux.HandleFunc("/api/logs/error", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "logs/error.txt")
