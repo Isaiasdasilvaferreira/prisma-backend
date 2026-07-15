@@ -3,7 +3,6 @@ package user_opportunity
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -53,16 +52,7 @@ func (c *Controller) GetUserOpportunity(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c *Controller) GetAllUserOpportunities(w http.ResponseWriter, r *http.Request) {
-	var isActive *bool
-
-	if isActiveParam := r.URL.Query().Get("is_active"); isActiveParam != "" {
-		val, err := strconv.ParseBool(isActiveParam)
-		if err == nil {
-			isActive = &val
-		}
-	}
-
-	opportunities, err := c.service.GetAllUserOpportunities(r.Context(), isActive)
+	opportunities, err := c.service.GetAllUserOpportunities(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
