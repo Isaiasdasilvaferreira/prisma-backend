@@ -31,13 +31,13 @@ type SignupRequest struct {
 func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.ErrorResponse(w, http.StatusBadRequest, "Requisição inválida")
 		return
 	}
 
 	claims, token, err := c.authService.SignIn(r.Context(), req.Email, req.Password)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid email or password")
+		utils.ErrorResponse(w, http.StatusUnauthorized, "E-mail ou senha inválidos")
 		return
 	}
 
@@ -75,13 +75,13 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.ErrorResponse(w, http.StatusBadRequest, "Requisição inválida")
 		return
 	}
 
 	claims, token, err := c.authService.SignUp(r.Context(), req.Email, req.Password, req.Metadata)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Error creating account")
+		utils.ErrorResponse(w, http.StatusBadRequest, "Erro ao criar conta")
 		return
 	}
 
@@ -119,7 +119,7 @@ func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 func (c *AuthController) Me(w http.ResponseWriter, r *http.Request) {
 	claims, ok := GetUserFromContext(r.Context())
 	if !ok {
-		utils.ErrorResponse(w, http.StatusUnauthorized, "User not authenticated")
+		utils.ErrorResponse(w, http.StatusUnauthorized, "Usuário não autenticado")
 		return
 	}
 
@@ -160,6 +160,6 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	utils.SuccessResponse(w, http.StatusOK, map[string]string{
-		"message": "Logged out successfully",
+		"message": "Logout realizado com sucesso",
 	})
 }
