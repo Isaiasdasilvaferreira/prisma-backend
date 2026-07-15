@@ -198,7 +198,7 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 
 	for _, id := range opp.ApplicantIDs {
 		if id == userID {
-			return nil, fmt.Errorf("user has already applied for this opportunity")
+			return nil, fmt.Errorf("you have already applied for this opportunity")
 		}
 	}
 
