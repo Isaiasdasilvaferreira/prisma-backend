@@ -61,7 +61,6 @@ func (s *Service) GetUserOpportunity(ctx context.Context, id string) (*UserOppor
 }
 
 func (s *Service) GetAllUserOpportunities(ctx context.Context, isActive *bool) ([]*UserOpportunity, error) {
-	fmt.Printf("📦 Service.GetAllUserOpportunities com isActive=%v\n", isActive)
 	return s.repo.GetAll(ctx, isActive)
 }
 
