@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 )
 
 type Controller struct {
@@ -165,6 +166,12 @@ func (c *Controller) RejectUserOpportunity(w http.ResponseWriter, r *http.Reques
 }
 
 func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	if id == "" {
@@ -172,18 +179,7 @@ func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var req ApplyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if req.UserID == "" {
-		http.Error(w, "User ID is required", http.StatusBadRequest)
-		return
-	}
-
-	opp, err := c.service.ApplyToOpportunity(r.Context(), id, req.UserID)
+	opp, err := c.service.ApplyToOpportunity(r.Context(), id, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -198,9 +194,9 @@ func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c *Controller) GetUserApplications(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "User ID is required", http.StatusBadRequest)
+	userID, ok := auth.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
