@@ -202,9 +202,14 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 		}
 	}
 
-	opp.ApplicantIDs = append(opp.ApplicantIDs, userID)
+	newApplicantIDs := append(opp.ApplicantIDs, userID)
 	newRemaining := *opp.RemainingVacancies - 1
-	opp.RemainingVacancies = &newRemaining
+
+	updateData := map[string]interface{}{
+		"applicant_ids":       newApplicantIDs,
+		"remaining_vacancies": newRemaining,
+		"updated_at":          time.Now(),
+	}
 
 	if newRemaining <= 0 {
 		err = r.Delete(ctx, opportunityID)
@@ -214,12 +219,21 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 		return nil, fmt.Errorf("opportunity fully booked and removed")
 	}
 
-	err = r.Update(ctx, opp)
+	var result []UserOpportunity
+	err = r.admin.DB.From("user_opportunities").
+		Update(updateData).
+		Eq("id", opportunityID).
+		Execute(&result)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to update opportunity: %w", err)
 	}
 
-	return opp, nil
+	if len(result) == 0 {
+		return nil, fmt.Errorf("opportunity not found")
+	}
+
+	return &result[0], nil
 }
 
 func (r *Repository) GetByUserID(ctx context.Context, userID string) ([]*UserOpportunity, error) {
