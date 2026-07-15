@@ -60,8 +60,8 @@ func (s *Service) GetUserOpportunity(ctx context.Context, id string) (*UserOppor
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *Service) GetAllUserOpportunities(ctx context.Context, isActive *bool) ([]*UserOpportunity, error) {
-	return s.repo.GetAll(ctx, isActive)
+func (s *Service) GetAllUserOpportunities(ctx context.Context) ([]*UserOpportunity, error) {
+	return s.repo.GetAll(ctx)
 }
 
 func (s *Service) UpdateUserOpportunity(ctx context.Context, id string, req *UpdateUserOpportunityRequest) (*UserOpportunity, error) {
