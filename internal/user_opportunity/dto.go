@@ -11,6 +11,8 @@ type UserOpportunityResponse struct {
 	Location               *string    `json:"location"`
 	Salary                 *string    `json:"salary"`
 	AvailableRegistration  *int       `json:"available_registration"`
+	RemainingVacancies     *int       `json:"remaining_vacancies"`
+	ApplicantIDs           []string   `json:"applicant_ids"`
 	WhatsApp               *string    `json:"whatsapp"`
 	Email                  string     `json:"email"`
 	Description            string     `json:"description"`
@@ -31,6 +33,8 @@ func (u *UserOpportunity) ToResponse() UserOpportunityResponse {
 		Location:              u.Location,
 		Salary:                u.Salary,
 		AvailableRegistration: u.AvailableRegistration,
+		RemainingVacancies:    u.RemainingVacancies,
+		ApplicantIDs:          u.ApplicantIDs,
 		WhatsApp:              u.WhatsApp,
 		Email:                 u.Email,
 		Description:           u.Description,
