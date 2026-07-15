@@ -163,3 +163,53 @@ func (c *Controller) RejectUserOpportunity(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(opp.ToResponse())
 }
+
+func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if id == "" {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var req ApplyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.UserID == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	opp, err := c.service.ApplyToOpportunity(r.Context(), id, req.UserID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if opp != nil {
+		json.NewEncoder(w).Encode(opp.ToResponse())
+	} else {
+		json.NewEncoder(w).Encode(map[string]string{"message": "Application successful"})
+	}
+}
+
+func (c *Controller) GetUserApplications(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	opps, err := c.service.GetUserApplications(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ToResponseList(opps))
+}
