@@ -83,7 +83,7 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		}
 	}))
 
-	mux.HandleFunc("/api/user-opportunities", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/api/user-opportunities", r.authMiddleware.Authenticate(func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodPost:
 			r.userOpportunityController.CreateUserOpportunity(w, req)
@@ -92,9 +92,9 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	})
+	}))
 
-	mux.HandleFunc("/api/user-opportunities/", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/api/user-opportunities/", r.authMiddleware.Authenticate(func(w http.ResponseWriter, req *http.Request) {
 		path := strings.TrimPrefix(req.URL.Path, "/api/user-opportunities/")
 		parts := strings.Split(path, "/")
 
@@ -144,15 +144,15 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		}
 
 		http.Error(w, "Invalid endpoint", http.StatusNotFound)
-	})
+	}))
 
-	mux.HandleFunc("/api/user-applications", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/api/user-applications", r.authMiddleware.Authenticate(func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodGet {
 			r.userOpportunityController.GetUserApplications(w, req)
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	})
+	}))
 
 	mux.HandleFunc("/api/logs/error", func(w http.ResponseWriter, req *http.Request) {
 		http.ServeFile(w, req, "logs/error.txt")
