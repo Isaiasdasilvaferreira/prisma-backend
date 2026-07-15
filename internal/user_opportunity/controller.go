@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
@@ -36,8 +37,10 @@ func (c *Controller) CreateUserOpportunity(w http.ResponseWriter, r *http.Reques
 }
 
 func (c *Controller) GetUserOpportunity(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -77,8 +80,10 @@ func (c *Controller) GetAllUserOpportunities(w http.ResponseWriter, r *http.Requ
 }
 
 func (c *Controller) UpdateUserOpportunity(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -101,8 +106,10 @@ func (c *Controller) UpdateUserOpportunity(w http.ResponseWriter, r *http.Reques
 }
 
 func (c *Controller) DeleteUserOpportunity(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -118,8 +125,10 @@ func (c *Controller) DeleteUserOpportunity(w http.ResponseWriter, r *http.Reques
 }
 
 func (c *Controller) ApproveUserOpportunity(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -142,8 +151,10 @@ func (c *Controller) ApproveUserOpportunity(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *Controller) RejectUserOpportunity(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -172,8 +183,10 @@ func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	path := strings.TrimPrefix(r.URL.Path, "/api/user-opportunities/")
+	parts := strings.Split(path, "/")
+	id := parts[0]
+
 	if id == "" {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
