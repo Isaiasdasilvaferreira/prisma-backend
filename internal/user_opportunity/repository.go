@@ -30,6 +30,14 @@ func (r *Repository) Create(ctx context.Context, opp *UserOpportunity) error {
 	opp.CreatedAt = now
 	opp.UpdatedAt = now
 	opp.IsActive = false
+	opp.ApplicantIDs = []string{}
+
+	if opp.AvailableRegistration != nil {
+		opp.RemainingVacancies = opp.AvailableRegistration
+	} else {
+		remaining := 1
+		opp.RemainingVacancies = &remaining
+	}
 
 	var result []UserOpportunity
 	err := r.admin.DB.From("user_opportunities").
@@ -176,4 +184,59 @@ func (r *Repository) Reject(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) Apply(ctx context.Context, opportunityID string, userID string) (*UserOpportunity, error) {
+	opp, err := r.GetByID(ctx, opportunityID)
+	if err != nil {
+		return nil, err
+	}
+
+	if opp.RemainingVacancies == nil || *opp.RemainingVacancies <= 0 {
+		return nil, fmt.Errorf("no vacancies available")
+	}
+
+	for _, id := range opp.ApplicantIDs {
+		if id == userID {
+			return nil, fmt.Errorf("user has already applied for this opportunity")
+		}
+	}
+
+	opp.ApplicantIDs = append(opp.ApplicantIDs, userID)
+	newRemaining := *opp.RemainingVacancies - 1
+	opp.RemainingVacancies = &newRemaining
+
+	if newRemaining <= 0 {
+		err = r.Delete(ctx, opportunityID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete opportunity after all vacancies filled: %w", err)
+		}
+		return nil, fmt.Errorf("opportunity fully booked and removed")
+	}
+
+	err = r.Update(ctx, opp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update opportunity: %w", err)
+	}
+
+	return opp, nil
+}
+
+func (r *Repository) GetByUserID(ctx context.Context, userID string) ([]*UserOpportunity, error) {
+	var result []UserOpportunity
+	err := r.client.DB.From("user_opportunities").
+		Select("*").
+		Filter("applicant_ids", "cs", fmt.Sprintf("{%s}", userID)).
+		Execute(&result)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user applications: %w", err)
+	}
+
+	opportunities := make([]*UserOpportunity, len(result))
+	for i := range result {
+		opportunities[i] = &result[i]
+	}
+
+	return opportunities, nil
 }
