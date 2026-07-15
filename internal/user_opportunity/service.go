@@ -139,3 +139,20 @@ func (s *Service) RejectUserOpportunity(ctx context.Context, id string) error {
 
 	return s.repo.Reject(ctx, id)
 }
+
+func (s *Service) ApplyToOpportunity(ctx context.Context, opportunityID string, userID string) (*UserOpportunity, error) {
+	opp, err := s.repo.GetByID(ctx, opportunityID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !opp.IsActive {
+		return nil, fmt.Errorf("opportunity is not active")
+	}
+
+	return s.repo.Apply(ctx, opportunityID, userID)
+}
+
+func (s *Service) GetUserApplications(ctx context.Context, userID string) ([]*UserOpportunity, error) {
+	return s.repo.GetByUserID(ctx, userID)
+}
