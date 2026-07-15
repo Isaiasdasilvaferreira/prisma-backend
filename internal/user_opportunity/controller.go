@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/Isaiasdasilvaferreira/prisma-backend/internal/auth"
 )
 
