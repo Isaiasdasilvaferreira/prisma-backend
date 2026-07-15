@@ -28,7 +28,16 @@ func NewService(repo Repository, userSvc user.Service) Service {
 }
 
 func (s *service) GetUserOpportunities(ctx context.Context, userID string, source string, limit int) ([]Opportunity, error) {
-	return s.repo.GetByUserIDWithFilters(ctx, userID, source, limit)
+	opps, err := s.repo.GetByUserIDWithFilters(ctx, userID, source, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	if limit > 0 && len(opps) > limit {
+		opps = opps[:limit]
+	}
+
+	return opps, nil
 }
 
 func (s *service) GetUserOpportunityByExternalID(ctx context.Context, userID string, externalID string) (*Opportunity, error) {
@@ -43,7 +52,16 @@ func (s *service) GetUserOpportunityByExternalID(ctx context.Context, userID str
 }
 
 func (s *service) GetOpportunitiesBySource(ctx context.Context, source string, limit int) ([]Opportunity, error) {
-	return s.repo.GetBySource(ctx, source, limit)
+	opps, err := s.repo.GetBySource(ctx, source, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	if limit > 0 && len(opps) > limit {
+		opps = opps[:limit]
+	}
+
+	return opps, nil
 }
 
 func (s *service) GetOpportunitiesStats(ctx context.Context, userID string) (map[string]interface{}, error) {
