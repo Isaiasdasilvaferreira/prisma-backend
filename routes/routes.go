@@ -103,8 +103,6 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 			return
 		}
 
-		id := parts[0]
-
 		if len(parts) == 1 {
 			switch req.Method {
 			case http.MethodGet:
