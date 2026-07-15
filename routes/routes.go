@@ -131,6 +131,12 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 				} else {
 					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				}
+			case "apply":
+				if req.Method == http.MethodPost {
+					r.userOpportunityController.ApplyToOpportunity(w, req)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
 			default:
 				http.Error(w, "Invalid endpoint", http.StatusNotFound)
 			}
@@ -138,6 +144,14 @@ func (r *AuthRoutes) RegisterRoutes(mux *http.ServeMux) {
 		}
 
 		http.Error(w, "Invalid endpoint", http.StatusNotFound)
+	})
+
+	mux.HandleFunc("/api/user-applications", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodGet {
+			r.userOpportunityController.GetUserApplications(w, req)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	})
 
 	mux.HandleFunc("/api/logs/error", func(w http.ResponseWriter, req *http.Request) {
