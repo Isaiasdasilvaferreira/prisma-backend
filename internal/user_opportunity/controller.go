@@ -2,7 +2,6 @@ package user_opportunity
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -54,25 +53,19 @@ func (c *Controller) GetUserOpportunity(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c *Controller) GetAllUserOpportunities(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("📥 GET /user-opportunities")
-	
 	var isActive *bool
 	if isActiveParam := r.URL.Query().Get("is_active"); isActiveParam != "" {
 		val, err := strconv.ParseBool(isActiveParam)
 		if err == nil {
 			isActive = &val
-			fmt.Printf("🔍 Filtro is_active: %v\n", val)
 		}
 	}
 
 	opportunities, err := c.service.GetAllUserOpportunities(r.Context(), isActive)
 	if err != nil {
-		fmt.Printf("❌ Erro: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Printf("✅ Retornando %d oportunidades\n", len(opportunities))
 
 	w.Header().Set("Content-Type", "application/json")
 	if len(opportunities) == 0 {
