@@ -59,6 +59,10 @@ func (c *Controller) GetAllUserOpportunities(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if len(opportunities) == 0 {
+		json.NewEncoder(w).Encode([]UserOpportunityResponse{})
+		return
+	}
 	json.NewEncoder(w).Encode(ToResponseList(opportunities))
 }
 
