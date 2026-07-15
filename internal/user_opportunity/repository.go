@@ -58,7 +58,7 @@ func (r *Repository) Create(ctx context.Context, opp *UserOpportunity) error {
 
 func (r *Repository) GetByID(ctx context.Context, id string) (*UserOpportunity, error) {
 	var result []UserOpportunity
-	err := r.client.DB.From("user_opportunities").
+	err := r.admin.DB.From("user_opportunities").
 		Select("*").
 		Eq("id", id).
 		Execute(&result)
@@ -238,7 +238,7 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 
 func (r *Repository) GetByUserID(ctx context.Context, userID string) ([]*UserOpportunity, error) {
 	var result []UserOpportunity
-	err := r.client.DB.From("user_opportunities").
+	err := r.admin.DB.From("user_opportunities").
 		Select("*").
 		Filter("applicant_ids", "cs", fmt.Sprintf("{%s}", userID)).
 		Execute(&result)
