@@ -13,6 +13,8 @@ type UserOpportunity struct {
 	Location               *string    `json:"location"`
 	Salary                 *string    `json:"salary"`
 	AvailableRegistration  *int       `json:"available_registration"`
+	RemainingVacancies     *int       `json:"remaining_vacancies"`
+	ApplicantIDs           []string   `json:"applicant_ids"`
 	WhatsApp               *string    `json:"whatsapp"`
 	Email                  string     `json:"email"`
 	Description            string     `json:"description"`
@@ -52,4 +54,8 @@ type UpdateUserOpportunityRequest struct {
 	Responsibilities      *string `json:"responsibilities"`
 	Requirements          *string `json:"requirements"`
 	IsActive              *bool   `json:"is_active"`
+}
+
+type ApplyRequest struct {
+	UserID string `json:"user_id"`
 }
