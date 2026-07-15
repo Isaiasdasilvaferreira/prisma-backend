@@ -55,7 +55,3 @@ type UpdateUserOpportunityRequest struct {
 	Requirements          *string `json:"requirements"`
 	IsActive              *bool   `json:"is_active"`
 }
-
-type ApplyRequest struct {
-	UserID string `json:"user_id"`
-}
