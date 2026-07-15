@@ -178,7 +178,9 @@ func (c *Controller) RejectUserOpportunity(w http.ResponseWriter, r *http.Reques
 func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.GetUserIDFromContext(r.Context())
 	if !ok {
-		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "User not authenticated"})
 		return
 	}
 
@@ -187,13 +189,17 @@ func (c *Controller) ApplyToOpportunity(w http.ResponseWriter, r *http.Request) 
 	id := parts[0]
 
 	if id == "" {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid ID"})
 		return
 	}
 
 	opp, err := c.service.ApplyToOpportunity(r.Context(), id, userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
