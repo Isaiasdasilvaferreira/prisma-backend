@@ -66,15 +66,26 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*UserOpportunity, 
 	return &result[0], nil
 }
 
-func (r *Repository) GetAll(ctx context.Context) ([]*UserOpportunity, error) {
+func (r *Repository) GetAll(ctx context.Context, isActive *bool) ([]*UserOpportunity, error) {
+	fmt.Println("🔍 Repository.GetAll chamado")
+	
 	var result []UserOpportunity
-	err := r.client.DB.From("user_opportunities").
-		Select("*").
-		Execute(&result)
-
+	query := r.admin.DB.From("user_opportunities").Select("*")
+	
+	if isActive != nil {
+		fmt.Printf("🔍 Aplicando filtro is_active = %v\n", *isActive)
+		query = query.Filter("is_active", "eq", *isActive)
+	} else {
+		fmt.Println("🔍 Sem filtro, retornando todos")
+	}
+	
+	err := query.Execute(&result)
 	if err != nil {
+		fmt.Printf("❌ Erro no Supabase: %v\n", err)
 		return nil, fmt.Errorf("failed to list user opportunities: %w", err)
 	}
+
+	fmt.Printf("✅ Encontrados %d registros\n", len(result))
 
 	opportunities := make([]*UserOpportunity, len(result))
 	for i := range result {
