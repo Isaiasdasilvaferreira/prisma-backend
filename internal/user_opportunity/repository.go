@@ -212,11 +212,7 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 	}
 
 	if newRemaining <= 0 {
-		err = r.Delete(ctx, opportunityID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete opportunity after all vacancies filled: %w", err)
-		}
-		return nil, fmt.Errorf("opportunity fully booked and removed")
+		updateData["is_active"] = false
 	}
 
 	var result []UserOpportunity
@@ -231,6 +227,10 @@ func (r *Repository) Apply(ctx context.Context, opportunityID string, userID str
 
 	if len(result) == 0 {
 		return nil, fmt.Errorf("opportunity not found")
+	}
+
+	if newRemaining <= 0 {
+		return nil, fmt.Errorf("opportunity fully booked and deactivated")
 	}
 
 	return &result[0], nil
