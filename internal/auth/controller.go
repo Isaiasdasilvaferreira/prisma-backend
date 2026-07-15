@@ -37,7 +37,7 @@ func (c *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 
 	claims, token, err := c.authService.SignIn(r.Context(), req.Email, req.Password)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusUnauthorized, err.Error())
+		utils.ErrorResponse(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
@@ -81,7 +81,7 @@ func (c *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 
 	claims, token, err := c.authService.SignUp(r.Context(), req.Email, req.Password, req.Metadata)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.ErrorResponse(w, http.StatusBadRequest, "Error creating account")
 		return
 	}
 
