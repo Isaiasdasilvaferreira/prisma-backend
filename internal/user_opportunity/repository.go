@@ -70,16 +70,21 @@ func (r *Repository) GetAll(ctx context.Context, isActive *bool) ([]*UserOpportu
 	fmt.Println("🔍 Repository.GetAll chamado")
 	
 	var result []UserOpportunity
-	query := r.admin.DB.From("user_opportunities").Select("*")
+	var err error
 	
 	if isActive != nil {
 		fmt.Printf("🔍 Aplicando filtro is_active = %v\n", *isActive)
-		query = query.Filter("is_active", "eq", *isActive)
+		err = r.admin.DB.From("user_opportunities").
+			Select("*").
+			Eq("is_active", fmt.Sprintf("%v", *isActive)).
+			Execute(&result)
 	} else {
 		fmt.Println("🔍 Sem filtro, retornando todos")
+		err = r.admin.DB.From("user_opportunities").
+			Select("*").
+			Execute(&result)
 	}
 	
-	err := query.Execute(&result)
 	if err != nil {
 		fmt.Printf("❌ Erro no Supabase: %v\n", err)
 		return nil, fmt.Errorf("failed to list user opportunities: %w", err)
