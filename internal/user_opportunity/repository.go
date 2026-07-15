@@ -73,8 +73,6 @@ func (r *Repository) GetAll(ctx context.Context, isActive *bool) ([]*UserOpportu
 		query = query.Eq("is_active", *isActive)
 	}
 
-	query = query.Order("created_at", &supabase.OrderOpts{Descending: true})
-
 	var result []UserOpportunity
 	err := query.Execute(&result)
 	if err != nil {
