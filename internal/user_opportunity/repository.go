@@ -67,14 +67,20 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*UserOpportunity, 
 }
 
 func (r *Repository) GetAll(ctx context.Context, isActive *bool) ([]*UserOpportunity, error) {
-	query := r.client.DB.From("user_opportunities").Select("*")
+	var result []UserOpportunity
+	var err error
 
 	if isActive != nil {
-		query = query.Eq("is_active", *isActive)
+		err = r.client.DB.From("user_opportunities").
+			Select("*").
+			Eq("is_active", fmt.Sprintf("%v", *isActive)).
+			Execute(&result)
+	} else {
+		err = r.client.DB.From("user_opportunities").
+			Select("*").
+			Execute(&result)
 	}
 
-	var result []UserOpportunity
-	err := query.Execute(&result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list user opportunities: %w", err)
 	}
